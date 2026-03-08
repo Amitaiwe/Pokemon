@@ -775,69 +775,43 @@ body {
 /* ══ WILD BUTTONS ══ */
 
 /* ══════════ WILD ENCOUNTER ══════════ */
+/* ── wild buttons ── */
+/* ══════════════════════════════════ */
+
+/* ══ WILD ENCOUNTER (simple, reliable) ══ */
 #wild-wrap {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 999;
   display: none;
   align-items: center;
   justify-content: center;
+  background: rgba(0,0,0,0.6);
   pointer-events: all;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(2px);
 }
 #wild-card {
+  pointer-events: all;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  background: rgba(10,14,26,0.97);
-  border: 2px solid rgba(255,255,255,0.18);
+  gap: 8px;
+  background: rgba(8,12,24,0.97);
+  border: 2px solid rgba(255,255,255,0.2);
   border-radius: 18px;
-  padding: 18px 22px 16px;
-  width: min(320px, 90vw);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  padding: 18px 22px 18px;
+  width: min(310px, 88vw);
+  box-shadow: 0 10px 50px rgba(0,0,0,0.8);
   animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
-}
-#wild-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 6px;
-}
-#wild-level {
-  font-size: 12px; font-weight: 800; color: #38c878;
-  background: rgba(56,200,120,.15); padding: 2px 10px;
-  border-radius: 20px; border: 1px solid rgba(56,200,120,.3);
-}
-#wild-shiny-badge {
-  font-size: 11px; font-weight: 800; color: #f8d030;
-  background: rgba(248,208,48,.12); padding: 2px 8px;
-  border-radius: 20px; border: 1px solid rgba(248,208,48,.35);
-}
-#wild-battle-log {
-  display: none;
-  width: 100%;
-  background: rgba(0,0,0,.45);
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: 11px;
-  color: #ddd;
-  max-height: 72px;
-  overflow-y: auto;
-  text-align: right;
-  line-height: 1.55;
 }
 #wild-btns-area {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: wrap;
   justify-content: center;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 4px;
 }
-/* ── wild buttons ── */
 .wbtn {
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
@@ -854,15 +828,16 @@ body {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
+  pointer-events: all;
 }
 .wbtn:active  { transform: scale(.93); }
-.wbtn-fight   { background: #c8250d; border-color: #7a1000; color: #fff; flex: 1; }
-.wbtn-flee    { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.25); color: #bbb; flex: 1; }
-.wbtn-xp      { background: rgba(248,208,48,.13); border-color: #f8d030; color: #f8d030; width: 100%; }
-.wbtn-pball   { background: #c8250d; border-color: #7a1000; color: #fff; flex: 1; }
-.wbtn-gball   { background: #1a55bb; border-color: #0a3080; color: #fff; flex: 1; }
-.wbtn-mball   { background: #7711bb; border-color: #3d0070; color: #fff; flex: 1; }
-/* ══════════════════════════════════ */
+.wbtn-fight   { background:#c8250d; border-color:#7a1000; color:#fff; flex:1; }
+.wbtn-flee    { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.25); color:#bbb; flex:1; }
+.wbtn-xp      { background:rgba(248,208,48,.13); border-color:#f8d030; color:#f8d030; width:100%; }
+.wbtn-pball   { background:#c8250d; border-color:#7a1000; color:#fff; flex:1; }
+.wbtn-gball   { background:#1a55bb; border-color:#0a3080; color:#fff; flex:1; }
+.wbtn-mball   { background:#7711bb; border-color:#3d0070; color:#fff; flex:1; }
+/* ════════════════════════════════════ */
 </style>
 </head>
 <body>
@@ -940,12 +915,12 @@ body {
 <!-- WILD POKEMON CARD -->
 <div id="wild-wrap">
   <div id="wild-card">
-    <div id="wild-top-row">
-      <span id="wild-rarity"></span>
-      <span id="wild-level">Lv.1</span>
-      <span id="wild-shiny-badge" style="display:none;">✨ שיינינ</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:6px;">
+      <span id="wild-rarity" class="rarity-pill"></span>
+      <span id="wild-level" style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.15);padding:2px 10px;border-radius:20px;border:1px solid rgba(56,200,120,.3);">Lv.1</span>
+      <span id="wild-shiny-badge" style="display:none;font-size:11px;font-weight:800;color:#f8d030;background:rgba(248,208,48,.12);padding:2px 8px;border-radius:20px;border:1px solid rgba(248,208,48,.35);">✨ שיינינ</span>
     </div>
-    <img id="wild-sprite" src="" alt="">
+    <img id="wild-sprite" src="" alt="" style="width:130px;height:130px;image-rendering:pixelated;animation:float 2s ease-in-out infinite;">
     <div class="poke-name" id="wild-name"></div>
     <div class="poke-stats">
       <span>⚔️ <span id="wild-atk"></span></span>
@@ -953,9 +928,9 @@ body {
       <span>💪 <span id="wild-pow"></span></span>
     </div>
     <div id="wild-type"></div>
-    <div id="wild-battle-log"></div>
+    <div id="wild-battle-log" style="display:none;background:rgba(0,0,0,.4);border-radius:8px;padding:8px;font-size:11px;color:#fff;width:100%;max-height:72px;overflow-y:auto;text-align:right;line-height:1.6;"></div>
+    <div id="wild-btns-area" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:4px;"></div>
   </div>
-  <div id="wild-btns-area"></div>
 </div>
 
 <!-- CATCHING ANIMATION -->
@@ -2323,48 +2298,48 @@ function _ballSvg(fill) {
 }
 
 // ── showWildButtons ───────────────────────────────────────
-function showWildButtons(state) {
-  // gym/pvp visibility
+function showWildButtons(state){
   const gymBtn = document.getElementById('main-gym-btn');
   const pvpBtn = document.getElementById('main-pvp-btn');
-  const hiding = (state === 'hide');
-  if (gymBtn) gymBtn.classList.toggle('hidden-battle', hiding);
-  if (pvpBtn) pvpBtn.classList.toggle('hidden-battle', hiding);
+  const hiding = (state==='hide');
+  if(gymBtn) gymBtn.classList.toggle('hidden-battle', hiding);
+  if(pvpBtn) pvpBtn.classList.toggle('hidden-battle', hiding);
 
-  const btns = _wildBtns();
-  if (!btns) return;
-  // clear
-  while (btns.firstChild) btns.removeChild(btns.firstChild);
+  const btns = document.getElementById('wild-btns-area');
+  if(!btns) return;
+  btns.innerHTML = '';
 
-  if (state === 'initial') {
-    btns.appendChild(_makeBtn('⚔️ הלחם', 'wbtn-fight', doFieldBattle));
-    btns.appendChild(_makeBtn('🏃 ברח',   'wbtn-flee',  flee));
+  if(state==='initial'){
+    btns.innerHTML = '<button class="wbtn wbtn-fight" onclick="doFieldBattle()">⚔️ הלחם</button>'
+      + '<button class="wbtn wbtn-flee" onclick="flee()">🏃 ברח</button>';
 
-  } else if (state === 'won') {
-    const xpPreview  = S.wild ? effectivePower(S.wild) : 0;
-    const active     = S.team.filter(Boolean).slice(0, 6);
-    const fXP        = Math.round(xpPreview * 2 / (active.length + 1));
+  } else if(state==='won'){
+    const xp = S.wild ? effectivePower(S.wild) : 0;
+    const act = S.team.filter(Boolean).slice(0,6);
+    const fxp = Math.round(xp*2/(act.length+1));
 
-    // XP button — full width row
-    const xpBtn = _makeBtn('⭐ שחרר (+' + fXP + ' XP)', 'wbtn-xp', releaseForXP);
+    const xpBtn = document.createElement('button');
+    xpBtn.className = 'wbtn wbtn-xp';
     xpBtn.style.width = '100%';
+    xpBtn.textContent = '⭐ שחרר (+' + fxp + ' XP)';
+    xpBtn.onclick = releaseForXP;
     btns.appendChild(xpBtn);
 
-    // Ball buttons row
-    const balls = [
-      { cls: 'wbtn-pball', fill: '#c8250d', type: 'poke',   id: 'cnt-pball',  count: S.balls },
-      { cls: 'wbtn-gball', fill: '#1a55bb', type: 'great',  id: 'cnt-gball',  count: S.greatBalls },
-      { cls: 'wbtn-mball', fill: '#7711bb', type: 'master', id: 'cnt-mball',  count: S.masterBalls },
-    ];
-    balls.forEach(function(b) {
-      const btn = _makeBtn(
-        _ballSvg(b.fill) + '<span id="' + b.id + '">' + b.count + '</span>',
-        b.cls,
-        function() { throwBall(b.type); }
-      );
-      if (b.count <= 0) btn.style.opacity = '0.38';
-      btns.appendChild(btn);
-    });
+    function mkBall(cls, fill, type, cntId, count){
+      const b = document.createElement('button');
+      b.className = 'wbtn ' + cls;
+      if(count<=0) b.style.opacity='0.4';
+      b.innerHTML = '<svg width="16" height="16" viewBox="0 0 60 60">'
+        +'<circle cx="30" cy="30" r="28" fill="'+fill+'" stroke="#222" stroke-width="2"/>'
+        +'<rect x="2" y="27" width="56" height="6" fill="#222"/>'
+        +'<circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/>'
+        +'</svg><span id="'+cntId+'">'+count+'</span>';
+      b.onclick = function(){ throwBall(type); };
+      btns.appendChild(b);
+    }
+    mkBall('wbtn-pball','#c8250d','poke',  'cnt-pball', S.balls);
+    mkBall('wbtn-gball','#1a55bb','great', 'cnt-gball', S.greatBalls);
+    mkBall('wbtn-mball','#7711bb','master','cnt-mball', S.masterBalls);
   }
 }
 
