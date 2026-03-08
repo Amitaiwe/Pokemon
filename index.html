@@ -943,7 +943,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.32</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.33</div>
   </div>
 </div>
 
@@ -4527,25 +4527,25 @@ window._onAuthReady = async function(user){
     <img id="hof-trainer-img" src="" alt="">
     <div class="hof-title" id="hof-trainer-name"></div>
     <div class="hof-trainer-name">המאמן שלך</div>
-    <!-- BALL COUNTS below sprite -->
-    <div id="hof-balls-row" style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:4px;background:rgba(227,53,13,.15);border:1px solid rgba(227,53,13,.4);border-radius:10px;padding:4px 10px;">
-        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#e3350d" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-        <span style="font-size:13px;font-weight:800;color:#ff7755;" id="hof-ball-count">0</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;background:rgba(34,102,204,.15);border:1px solid rgba(34,102,204,.4);border-radius:10px;padding:4px 10px;">
-        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#2266cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-        <span style="font-size:13px;font-weight:800;color:#6699ff;" id="hof-great-count">0</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;background:rgba(136,34,204,.15);border:1px solid rgba(136,34,204,.4);border-radius:10px;padding:4px 10px;">
-        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#8822cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-        <span style="font-size:13px;font-weight:800;color:#cc88ff;" id="hof-master-count">0</span>
-      </div>
-      <div onclick="useEvolutionStone()" title="לחץ להשתמש באבן" style="display:flex;align-items:center;gap:4px;background:rgba(248,208,48,.12);border:1.5px solid rgba(248,208,48,.5);border-radius:10px;padding:4px 10px;cursor:pointer;transition:background .15s;">
-        <span style="font-size:14px;">🪨</span>
-        <span style="font-size:13px;font-weight:800;color:#f8d030;" id="hof-stone-count">0</span>
-        <span style="font-size:9px;color:rgba(248,208,48,.6);">אבני התפתחות</span>
-      </div>
+  </div>
+  <!-- BALL + STONE COUNTS -->
+  <div id="hof-balls-row" style="display:flex;gap:8px;margin-bottom:12px;align-items:center;justify-content:center;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:4px;background:rgba(227,53,13,.15);border:1px solid rgba(227,53,13,.4);border-radius:10px;padding:4px 10px;">
+      <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#e3350d" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+      <span style="font-size:13px;font-weight:800;color:#ff7755;" id="hof-ball-count">0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;background:rgba(34,102,204,.15);border:1px solid rgba(34,102,204,.4);border-radius:10px;padding:4px 10px;">
+      <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#2266cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+      <span style="font-size:13px;font-weight:800;color:#6699ff;" id="hof-great-count">0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;background:rgba(136,34,204,.15);border:1px solid rgba(136,34,204,.4);border-radius:10px;padding:4px 10px;">
+      <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#8822cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+      <span style="font-size:13px;font-weight:800;color:#cc88ff;" id="hof-master-count">0</span>
+    </div>
+    <div onclick="useEvolutionStone()" title="לחץ להשתמש באבן" style="display:flex;align-items:center;gap:4px;background:rgba(248,208,48,.12);border:1.5px solid rgba(248,208,48,.5);border-radius:10px;padding:4px 10px;cursor:pointer;transition:background .15s;">
+      <span style="font-size:14px;">🪨</span>
+      <span style="font-size:13px;font-weight:800;color:#f8d030;" id="hof-stone-count">0</span>
+      <span style="font-size:9px;color:rgba(248,208,48,.6);">אבני התפתחות</span>
     </div>
   </div>
   <div class="hof-badges" id="hof-badges"></div>
