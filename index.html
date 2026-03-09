@@ -345,7 +345,7 @@ body {
 
 /* ── WILD POKEMON ── */
 #wild-wrap {
-  position:fixed; inset:0; z-index:20;
+  position:fixed; inset:0; z-index:50;
   display:none; flex-direction:column;
   align-items:center; justify-content:center;
   pointer-events:none;
@@ -383,7 +383,7 @@ body {
 .r-rare      { background:#1a4db0; color:#fff; }
 .r-veryrare  { background:#7722bb; color:#fff; }
 .r-legendary { background:linear-gradient(135deg,#f39c12,#e74c3c); color:#fff; box-shadow:0 0 14px rgba(243,156,18,.8); }
-.poke-stats { display:flex; gap:16px; font-size:13px; font-weight:600; color:rgba(255,255,255,.7); }
+
 .type-pill  { font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; color:#fff; }
 .wbtn {
   font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;
@@ -1114,11 +1114,6 @@ body {
     </div>
     <img id="wild-sprite" src="" alt="">
     <div class="poke-name" id="wild-name"></div>
-    <div class="poke-stats">
-      <span>⚔️ <span id="wild-atk"></span></span>
-      <span>✨ <span id="wild-spa"></span></span>
-      <span>💪 <span id="wild-pow"></span></span>
-    </div>
     <div id="wild-type"></div>
     <div id="wild-battle-log" style="display:none;background:rgba(0,0,0,.4);border-radius:8px;padding:8px;font-size:12px;color:#fff;width:100%;max-height:80px;overflow-y:auto;text-align:right;line-height:1.6;"></div>
     <div id="wild-btns-area" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:4px;"></div>
@@ -1191,7 +1186,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.24+E4</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.25+E4</div>
   </div>
 </div>
 
@@ -2016,9 +2011,6 @@ async function spawnWild(cx=0.5, cy=0.5){
   if(shinyBadge) shinyBadge.style.display = S.wild.shiny ? 'inline-block' : 'none';
   sfx(S.wild.shiny ? 'shiny' : 'encounter');
   document.getElementById('wild-name').textContent=p.name.toUpperCase();
-  document.getElementById('wild-atk').textContent=p.attack;
-  document.getElementById('wild-spa').textContent=p.spatk;
-  document.getElementById('wild-pow').textContent=p.power;
   document.getElementById('wild-level').textContent=`Lv.${wildLv}`;
   const rb=document.getElementById('wild-rarity');rb.className=`rarity-pill ${rarityCls(r)}`;rb.textContent=rarityLbl(r);
   document.getElementById('wild-type').innerHTML=`<span class="type-pill" style="background:${typeColor(p.type)}">${p.type}</span>`;
@@ -3449,26 +3441,41 @@ function pcPokeOptions(idx, p){
 }
 
 function showTeamPokeOptions(teamIdx, p, teamSize){
-  const existing = document.getElementById('pc-popup');
+  const existing = document.getElementById('team-action-popup');
   if(existing) existing.remove();
   const popup = document.createElement('div');
-  popup.id='pc-popup';
-  popup.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;';
+  popup.id='team-action-popup';
+  popup.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;';
   const canSend = teamSize > 1;
+  const canPromote = teamIdx > 0;
   popup.innerHTML=`
-    <div style="background:linear-gradient(160deg,#05101e,#0a1828);border:2px solid rgba(248,208,48,.3);border-radius:18px;padding:24px;max-width:280px;width:90%;text-align:center;">
-      <img src="${p.sprite}" style="width:80px;height:80px;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(248,208,48,.3));">
-      <div style="font-size:17px;font-weight:800;color:#fff;margin:8px 0 2px;">${p.name.toUpperCase()}</div>
-      <div style="font-size:12px;color:#f8d030;margin-bottom:16px;">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
-      ${canSend
-        ? `<button onclick="teamPokeToPC(${teamIdx});document.getElementById('pc-popup').remove();renderHofPanel();" 
-            style="width:100%;font-family:Outfit,sans-serif;font-size:14px;font-weight:800;padding:12px;border:2px solid #88ccff;border-radius:12px;background:rgba(100,180,255,.12);color:#88ccff;cursor:pointer;margin-bottom:8px;">💻 שלח למחשב</button>`
-        : `<div style="font-size:12px;color:#e3350d;margin-bottom:12px;padding:8px;background:rgba(227,53,13,.1);border-radius:8px;">חייב להישאר לפחות פוקימון אחד בצוות</div>`
-      }
-      <button onclick="document.getElementById('pc-popup').remove()" 
-        style="width:100%;font-family:Outfit,sans-serif;font-size:13px;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">ביטול</button>
+    <div style="background:#0d1b2e;border:1.5px solid rgba(255,255,255,.15);border-radius:18px;padding:22px 20px;max-width:260px;width:88%;text-align:center;font-family:Outfit,sans-serif;">
+      <img src="${p.sprite}" style="width:72px;height:72px;image-rendering:pixelated;">
+      <div style="font-size:16px;font-weight:800;color:#fff;margin:6px 0 2px;">${p.name.toUpperCase()}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:16px;">Lv${p.level||1} · ${p.type}</div>
+      ${canPromote ? `<button id="tap-first" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:11px;margin-bottom:8px;border:1.5px solid rgba(248,208,48,.4);border-radius:11px;background:rgba(248,208,48,.1);color:#f8d030;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">⭐ העבר לראש</button>` : ''}
+      ${canSend ? `<button id="tap-pc" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:11px;margin-bottom:8px;border:1.5px solid rgba(100,180,255,.3);border-radius:11px;background:rgba(100,180,255,.08);color:#88bbff;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">💻 שלח למחשב</button>` : ''}
+      <button id="tap-close" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:9px;border:none;background:none;color:#555;font-size:13px;cursor:pointer;touch-action:manipulation;">✕ סגור</button>
     </div>`;
   document.body.appendChild(popup);
+  const close = ()=>popup.remove();
+  popup.addEventListener('click', e=>{ if(e.target===popup) close(); });
+  document.getElementById('tap-close').addEventListener('click', close);
+  const firstBtn = document.getElementById('tap-first');
+  if(firstBtn){
+    firstBtn.addEventListener('click', ()=>{
+      const team = S.team.filter(Boolean);
+      team.splice(teamIdx,1); team.unshift(p);
+      S.team = team;
+      saveGame(); renderHofPanel(); close();
+    });
+  }
+  const pcBtn = document.getElementById('tap-pc');
+  if(pcBtn){
+    pcBtn.addEventListener('click', ()=>{
+      teamPokeToPC(teamIdx); renderHofPanel(); close();
+    });
+  }
 }
 
 function pcToTeam(storageIdx){
@@ -4714,7 +4721,7 @@ window._onAuthReady = async function(user){
   <!-- BUTTONS — right after team -->
   <div style="margin-top:16px;display:flex;gap:10px;width:100%;max-width:360px;">
     <button onclick="closeHofPanel()" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:12px;border:2px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;">✕ סגור</button>
-    <button onclick="closeHofPanel();toggleTeam()" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:12px;border:2px solid #f8d030;border-radius:12px;background:rgba(248,208,48,.12);color:#f8d030;cursor:pointer;">📋 צוות מלא</button>
+    
   </div>
 
   <!-- PC STORAGE SECTION — below buttons -->
