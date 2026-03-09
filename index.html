@@ -345,7 +345,7 @@ body {
 
 /* ── WILD POKEMON ── */
 #wild-wrap {
-  position:fixed; inset:0; z-index:50;
+  position:fixed; inset:0; z-index:60;
   display:none; flex-direction:column;
   align-items:center; justify-content:center;
   pointer-events:none;
@@ -390,6 +390,7 @@ body {
   border:2px solid;border-radius:10px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:4px;
   padding:10px 14px;transition:all .15s;
+  touch-action:manipulation; pointer-events:all;
 }
 .wbtn-fight { background:#e3350d;border-color:#8b1a00;color:#fff;flex:1; }
 .wbtn-flee  { background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#aaa;flex:1; }
@@ -1186,7 +1187,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.25+E4</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.4.17+E4</div>
   </div>
 </div>
 
@@ -1937,6 +1938,7 @@ const TYPE_POOLS = {
 // ═══════════════ ENCOUNTER ═══════════════
 async function arenaClick(e){
   if(S.phase!=='catch'||S.catching||S.wild)return;
+  document.getElementById('hof-panel').classList.remove('open');
   if(S.balls<=0 && S.greatBalls<=0 && S.masterBalls<=0){
     showToast('אין כדורים! 😰 נסה להדפיס כדורים מהאויבים','#e3350d');
     return;
@@ -2015,6 +2017,7 @@ async function spawnWild(cx=0.5, cy=0.5){
   const rb=document.getElementById('wild-rarity');rb.className=`rarity-pill ${rarityCls(r)}`;rb.textContent=rarityLbl(r);
   document.getElementById('wild-type').innerHTML=`<span class="type-pill" style="background:${typeColor(p.type)}">${p.type}</span>`;
   showWildButtons('initial'); // Fight / Flee (no catch until fought)
+  document.getElementById('hof-panel').classList.remove('open');
   document.getElementById('wild-wrap').style.display='flex';
 }
 
@@ -2208,10 +2211,15 @@ function showWildButtons(state){
   const btns = document.getElementById('wild-btns-area');
   btns.innerHTML = '';
   if(state==='initial'){
-    // Fight or Flee
-    btns.innerHTML = `
-      <button class="wbtn wbtn-fight" onclick="doFieldBattle()">⚔️ הלחם</button>
-      <button class="wbtn wbtn-flee" onclick="flee()">🏃 ברח</button>`;
+    const fBtn=document.createElement('button');
+    fBtn.className='wbtn wbtn-fight'; fBtn.textContent='⚔️ הלחם';
+    fBtn.addEventListener('click',()=>doFieldBattle());
+    fBtn.ontouchend=e=>{e.preventDefault();doFieldBattle();};
+    const rBtn=document.createElement('button');
+    rBtn.className='wbtn wbtn-flee'; rBtn.textContent='🏃 ברח';
+    rBtn.addEventListener('click',()=>flee());
+    rBtn.ontouchend=e=>{e.preventDefault();flee();};
+    btns.appendChild(fBtn); btns.appendChild(rBtn);
   } else if(state==='won'){
     const xpPreview = S.wild ? effectivePower(S.wild) : 0;
     const active = S.team.filter(Boolean).slice(0,6);
@@ -2545,7 +2553,8 @@ async function triggerGym(){
   S.phase='gym';
   document.getElementById('arena').onclick=null;
   document.getElementById('click-hint').style.display='none';
-  document.getElementById('team-panel').classList.remove('open'); // close drawer
+  document.getElementById('team-panel').classList.remove('open');
+  document.getElementById('hof-panel').classList.remove('open'); // close hof panel
   const g=GYMS[S.gym];
   S.enemies=await fetchGym(S.gym);
 
@@ -2717,17 +2726,17 @@ function requestBattleSwitch(){
     const card=document.createElement('div');
     card.className='switch-card';
     card.innerHTML=`<img src="${p.sprite}"><div class="sw-n">${p.name.substring(0,8).toUpperCase()}</div><div class="sw-hp" style="color:${p.currentHP/p.maxHP>.5?'#38c878':'#e3350d'}">HP ${p.currentHP}</div>`;
-    card.onclick=()=>{
-      // swap in battle order
-      const globalIdx = bs.playerIdx+1+i;
-      const chosen=bs.playerOrder.splice(globalIdx,1)[0];
-      bs.playerOrder.splice(bs.playerIdx+1,0,chosen);
-      // advance player index (skip current = costs turn)
+    const _doSwitch = ()=>{
+      const globalIdx = battleState.playerIdx+1+i;
+      const chosen=battleState.playerOrder.splice(globalIdx,1)[0];
+      battleState.playerOrder.splice(battleState.playerIdx+1,0,chosen);
       panel.style.display='none';
       const resolve=_battleSwitchResolve;
       _battleSwitchResolve=null;
-      resolve({mult:0,isSwitch:true}); // 0 damage this turn
+      if(resolve) resolve({mult:0,isSwitch:true});
     };
+    card.onclick = _doSwitch;
+    card.ontouchend = e=>{ e.preventDefault(); _doSwitch(); };
     opts.appendChild(card);
   });
   // Cancel button
@@ -2745,8 +2754,14 @@ function playerChooseMove(pp, ep){
     const tMult  = (TC[pp.type]||{})[ep.type] ?? 1;
     const btnWrap = document.getElementById('move-btns');
     btnWrap.style.display='flex';
-    document.getElementById('move-normal').onclick=()=>{ btnWrap.style.display='none'; _battleSwitchResolve=null; resolve({mult:nMult,isType:false}); };
-    document.getElementById('move-type').onclick  =()=>{ btnWrap.style.display='none'; _battleSwitchResolve=null; resolve({mult:tMult,isType:true});  };
+    const _resolveNorm = ()=>{ btnWrap.style.display='none'; _battleSwitchResolve=null; resolve({mult:nMult,isType:false}); };
+    const _resolveType = ()=>{ btnWrap.style.display='none'; _battleSwitchResolve=null; resolve({mult:tMult,isType:true}); };
+    const mnBtn = document.getElementById('move-normal');
+    const mtBtn = document.getElementById('move-type');
+    mnBtn.onclick = _resolveNorm;
+    mtBtn.onclick = _resolveType;
+    mnBtn.ontouchend = e=>{ e.preventDefault(); _resolveNorm(); };
+    mtBtn.ontouchend = e=>{ e.preventDefault(); _resolveType(); };
     document.getElementById('move-normal').textContent='👊 מכה רגילה';
     document.getElementById('move-type').textContent=`✨ ${pp.type.toUpperCase()}`;
     document.getElementById('move-type').style.background=typeColor(pp.type);
