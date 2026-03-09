@@ -176,6 +176,18 @@ async function fightElite(enemyPokes, el){
         dragon:{dragon:2,steel:.5,fairy:0},
         rock:{flying:2,bug:2,fire:2,ice:2,fighting:.5,ground:.5,steel:.5},
         psychic:{fighting:2,poison:2,dark:0,steel:.5,psychic:.5}};
+// Physical types use Attack/Defense; Special types use Sp.Atk/Sp.Def
+const PHYSICAL_TYPES = new Set(['normal','fighting','rock','ground','flying','bug','poison','ghost','steel']);
+function isPhysicalType(t){ return PHYSICAL_TYPES.has(t); }
+function bestAtkStat(p){ return isPhysicalType(p.type) ? (p.attack||50) : (p.spatk||p.attack||50); }
+function bestDefStat(defender, atkType){ return Math.max(1, isPhysicalType(atkType) ? (defender.defense||50) : (defender.spdef||50)); }
+function calcBestDmg(attacker, defender){
+  const mult    = (TC[attacker.type]||{})[defender.type] ?? 1;
+  const atkStat = bestAtkStat(attacker);
+  const defStat = bestDefStat(defender, attacker.type);
+  return { atkStat, defStat, mult };
+}
+
       
       let rounds = 0;
       while(ppHP>0 && epHP>0 && rounds<30){
@@ -1179,7 +1191,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.23+E4</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.24+E4</div>
   </div>
 </div>
 
@@ -1484,7 +1496,7 @@ const TCL = {
 const typeColor = t => TCL[t]||'#666';
 
 // ═══════════════ STATE ═══════════════
-let S = {balls:6,greatBalls:2,masterBalls:0,stones:0,team:[],storage:[],gym:0,badges:0,phase:'starter',wild:null,catching:false,enemies:[],pokedex:[],caught:[],gotMasterBall:false,trainer:null};
+let S = {balls:6,greatBalls:2,masterBalls:0,stones:0,team:[],storage:[],gym:0,badges:0,phase:'starter',wild:null,catching:false,enemies:[],pokedex:[],caught:[],gotMasterBall:false,trainer:null,winStreak:0};
 let cache={}, pending=null, selId=null, startPokes={}, _pcSelected=new Set();
 
 // ═══ SAVE / LOAD (Firebase + localStorage fallback) ═══
@@ -1743,13 +1755,7 @@ function updateTeam(){
         <span class="ts-type" style="background:${typeColor(p.type)}">${p.type}</span>
         ${storageBtn}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-        ${isSelected?'<div style="font-size:15px;">✅</div>':'<div style="font-size:11px;color:rgba(255,255,255,.2);">↕</div>'}
-        <div onclick="event.stopPropagation();quickSendToPC(${i})" title="שלח למחשב"
-          style="width:22px;height:22px;border-radius:6px;border:1.5px solid rgba(100,180,255,.35);
-          background:rgba(100,180,255,.08);display:flex;align-items:center;justify-content:center;
-          cursor:pointer;font-size:12px;transition:background .15s;">💻</div>
-      </div>`;
+`;
     d.onclick=()=>teamTap(i);
     d.style.cursor='pointer';
     sl.appendChild(d);
@@ -2244,25 +2250,10 @@ async function doFieldBattle(){
   document.getElementById('wild-btns-area').innerHTML = '<div style="color:#f8d030;font-size:13px;font-weight:700;text-align:center;">⚔️ נלחם...</div>';
   const log = document.getElementById('wild-battle-log');
   log.style.display='block'; log.innerHTML='';
-  // AUTO: pick best move — type (spatk vs spdef) or normal (attack vs def), whichever hits harder
-  const pTypeMult = (TC[fighter.type]||{})[enemy.type] ?? 1;
-  const eTypeMult = (TC[enemy.type]||{})[fighter.type] ?? 1;
-
-  // Player: compare type dmg vs normal dmg and pick best
-  const pTypeAtk  = Math.round((fighter.spatk||fighter.attack) / Math.max(1,enemy.spdef||50) * 80 * pTypeMult);
-  const pNormAtk  = Math.round((fighter.attack) / Math.max(1,enemy.defense||50) * 80);
-  const pUsesType = pTypeAtk >= pNormAtk;
-  const pAtkStat  = pUsesType ? (fighter.spatk||fighter.attack) : fighter.attack;
-  const pDefStat  = pUsesType ? Math.max(1,enemy.spdef||50) : Math.max(1,enemy.defense||50);
-  const pMult     = pUsesType ? pTypeMult : 1;
-
-  // Enemy: same logic
-  const eTypeAtk  = Math.round((enemy.spatk||enemy.attack) / Math.max(1,fighter.spdef||50) * 80 * eTypeMult);
-  const eNormAtk  = Math.round((enemy.attack) / Math.max(1,fighter.defense||50) * 80);
-  const eUsesType = eTypeAtk >= eNormAtk;
-  const eAtkStat  = eUsesType ? (enemy.spatk||enemy.attack) : enemy.attack;
-  const eDefStat  = eUsesType ? Math.max(1,fighter.spdef||50) : Math.max(1,fighter.defense||50);
-  const eMult     = eUsesType ? eTypeMult : 1;
+  // Physical/Special system: each type uses its own atk stat & the matching def
+  const {atkStat:pAtkStat, defStat:pDefStat, mult:pMult} = calcBestDmg(fighter, enemy);
+  const {atkStat:eAtkStat, defStat:eDefStat, mult:eMult} = calcBestDmg(enemy, fighter);
+  const pUsesType = pMult > 1;
 
   const fMaxHP = Math.round((fighter.baseHP||50)*(1+(fighter.level||1)*0.15));
   const eMaxHP = Math.round((enemy.baseHP||50)*(1+(enemy.level||1)*0.15));
@@ -2294,6 +2285,10 @@ async function doFieldBattle(){
     log.innerHTML += `<div style="color:#38c878;font-weight:800;margin-top:4px;">✅ ניצחת! (+${xpTotal} XP)</div>`;
     S.wild.fought=true;
     S.winStreak = (S.winStreak||0) + 1;
+    const _streak = S.winStreak;
+    if(_streak===10) showToast('🔥 רצף 10! סיכויי שייני ואגדי עלו!','#f8a030');
+    else if(_streak===20) showToast('🔥🔥 רצף 20! סיכויים גבוהים עוד יותר!','#ff6b35');
+    else if(_streak===30) showToast('🔥🔥🔥 רצף 30 — מקסימום! סיכויים מקסימליים!','#e3350d');
     await sleep(400);
     showWildButtons('won');
   } else {
@@ -2778,18 +2773,18 @@ async function fight1v1(pp, ep){
       const switchDef = Math.max(1, pp.spdef||50);
       const eDmg2 = Math.max(1, Math.round((ep.attack/switchDef)*80*(0.85+Math.random()*0.3)));
       // The NEW pokemon takes the hit
-      const nextPp = bs.playerOrder[bs.playerIdx+1];
+      const nextPp = battleState.playerOrder[battleState.playerIdx+1];
       if(nextPp){
-        nextPp.currentHP = Math.max(0, (nextPp.currentHP||nextPp.power) - eDmg2);
+        nextPp.currentHP = Math.max(0, (nextPp.currentHP||nextPp.maxHP||50) - eDmg2);
         document.getElementById('battle-log-txt').textContent=`🔄 החלפה! ${ep.name.toUpperCase()} תקף ${eDmg2}`;
+        updateHPBar('player', nextPp.currentHP, nextPp.maxHP);
       }
       await sleep(800);
       break; // end this 1v1, runBattleLoop will pick next pokemon
     } else {
-      // player move: type → spatk vs spdef | normal → attack vs defense
-      const isTypeMove = chosenMult > 1;
-      const ppAtk = isTypeMove ? (pp.spatk||pp.attack) : pp.attack;
-      const pDef  = Math.max(1, isTypeMove ? (ep.spdef||50) : (ep.defense||50));
+      // player move: physical types use attack/defense, special use spatk/spdef
+      const ppAtk = isPhysicalType(pp.type) ? (pp.attack||50) : (pp.spatk||pp.attack||50);
+      const pDef  = bestDefStat(ep, pp.type);
       const pDmg  = Math.max(1, Math.round((ppAtk / pDef) * 80 * chosenMult * (0.85+Math.random()*0.3)));
       ep.currentHP = Math.max(0, ep.currentHP - pDmg);
       updateHPBar('enemy', ep.currentHP, ep.maxHP);
@@ -2802,16 +2797,10 @@ async function fight1v1(pp, ep){
     }
 
     // --- ENEMY TURN: AI picks best move ---
-    // enemy auto: pick best move
-    const eTypeMult2 = (TC[ep.type]||{})[pp.type] ?? 1;
-    const eTypeDmg2 = (ep.spatk||ep.attack) / Math.max(1,pp.spdef||50) * eTypeMult2;
-    const eNormDmg2 = ep.attack / Math.max(1,pp.defense||50);
-    const eUsesType2 = eTypeDmg2 >= eNormDmg2;
-    const eAtk2 = eUsesType2 ? (ep.spatk||ep.attack) : ep.attack;
-    const eDef2 = Math.max(1, eUsesType2 ? (pp.spdef||50) : (pp.defense||50));
-    const eMult = eUsesType2 ? eTypeMult2 : 1;
-    const eDef  = eDef2;
-    const eDmg  = Math.max(1, Math.round((eAtk2 / eDef) * 80 * eMult * (0.85+Math.random()*0.3)));
+    // enemy: physical/special system
+    const {atkStat:eAtkG, defStat:eDefG, mult:eMultG} = calcBestDmg(ep, pp);
+    const eMult = eMultG;
+    const eDmg  = Math.max(1, Math.round((eAtkG / eDefG) * 80 * eMultG * (0.85+Math.random()*0.3)));
     pp.currentHP = Math.max(0, pp.currentHP - eDmg);
     updateHPBar('player', pp.currentHP, pp.maxHP);
     flashHit('b-player-sprite');
