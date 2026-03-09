@@ -1179,7 +1179,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.22+E4</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.23+E4</div>
   </div>
 </div>
 
@@ -1235,17 +1235,7 @@ body {
   </div>
 </div>
 
-<!-- ═══ SWAP OVERLAY ═══ -->
-<div class="overlay" id="swap-overlay">
-  <div class="obox">
-    <h2>🔄 החלפת פוקימון</h2>
-    <div class="osub">הצוות מלא (6/6) — בחר מי יוצא</div>
-    <div id="swap-preview" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:12px;margin-bottom:10px;"></div>
-    <div style="font-size:6px;color:#888;margin-bottom:6px;">בחר פוקימון להחליף:</div>
-    <div class="swap-grid" id="swap-grid"></div>
-    <button class="dismiss-btn" onclick="dismissSwap()">ויתר</button>
-  </div>
-</div>
+
 
 
 <!-- ═══ STONE OVERLAY ═══ -->
@@ -1499,9 +1489,11 @@ let cache={}, pending=null, selId=null, startPokes={}, _pcSelected=new Set();
 
 // ═══ SAVE / LOAD (Firebase + localStorage fallback) ═══
 const pSave = p=>p?{id:p.id,name:p.name,sprite:p.sprite,
-  attack:p.attack,spatk:p.spatk,defense:p.defense||50,spdef:p.spdef||50,baseHP:p.baseHP||50,
-  power:p.power,basePower:p.basePower||p.power,baseAttack:p.baseAttack||p.attack,
-  baseDefense:p.baseDefense||p.defense||50,baseSpdef:p.baseSpdef||p.spdef||50,
+  attack:p.attack,   baseAttack:p.baseAttack||p.attack,
+  spatk:p.spatk,     baseSpatk:p.baseSpatk||p.spatk,
+  defense:p.defense||50, baseDefense:p.baseDefense||p.defense||50,
+  spdef:p.spdef||50,     baseSpdef:p.baseSpdef||p.spdef||50,
+  baseHP:p.baseHP||50,   power:p.power, basePower:p.basePower||p.power,
   type:p.type,evolved:p.evolved||false,shiny:p.shiny||false,
   level:p.level||1,xp:p.xp||0}:null;
 
@@ -1679,23 +1671,41 @@ function teamToStorage(teamIdx){
 
 function teamTap(i){
   const arr = S.team.filter(Boolean);
-  if(_swapSrcIdx === null){
-    // First tap: select
-    _swapSrcIdx = i;
-    updateTeam();
-  } else if(_swapSrcIdx === i){
-    // Tap same: deselect
-    _swapSrcIdx = null;
-    updateTeam();
-  } else {
-    // Second tap: swap
-    const tmp = arr[_swapSrcIdx];
-    arr[_swapSrcIdx] = arr[i];
-    arr[i] = tmp;
-    S.team = [...arr, ...Array(Math.max(0,S.team.length-arr.length)).fill(null)];
-    _swapSrcIdx = null;
-    updateTeam();
+  const p = arr[i];
+  if(!p) return;
+  // Show mini popup
+  const existing = document.getElementById('team-popup');
+  if(existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id = 'team-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);';
+  popup.innerHTML = `
+    <div style="background:#0d1b2e;border:1.5px solid rgba(255,255,255,.15);border-radius:18px;padding:22px 20px;min-width:220px;text-align:center;font-family:Outfit,sans-serif;">
+      <img src="${p.sprite}" style="width:64px;height:64px;image-rendering:pixelated;">
+      <div style="font-size:15px;font-weight:800;color:#fff;margin:6px 0 2px;">${p.name.toUpperCase()}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:16px;">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
+      ${i>0 ? `<button id="tp-first" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:11px;margin-bottom:8px;border:1.5px solid rgba(248,208,48,.4);border-radius:11px;background:rgba(248,208,48,.1);color:#f8d030;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">⭐ העבר לראש</button>` : ''}
+      <button id="tp-pc" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:11px;margin-bottom:8px;border:1.5px solid rgba(100,180,255,.3);border-radius:11px;background:rgba(100,180,255,.08);color:#88bbff;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">💻 שלח למחשב</button>
+      <button id="tp-close" style="font-family:Outfit,sans-serif;display:block;width:100%;padding:9px;border:none;background:none;color:#555;font-size:13px;cursor:pointer;touch-action:manipulation;">✕ סגור</button>
+    </div>`;
+  document.body.appendChild(popup);
+
+  const close = ()=>popup.remove();
+  popup.addEventListener('click', e=>{ if(e.target===popup) close(); });
+  document.getElementById('tp-close').addEventListener('click', close);
+
+  const firstBtn = document.getElementById('tp-first');
+  if(firstBtn){
+    firstBtn.addEventListener('click', ()=>{
+      const team = S.team.filter(Boolean);
+      team.splice(i,1); team.unshift(p);
+      S.team = team;
+      updateTeam(); saveGame(); close();
+    });
   }
+  document.getElementById('tp-pc').addEventListener('click', ()=>{
+    quickSendToPC(i); close();
+  });
 }
 
 function updateTeam(){
@@ -1972,17 +1982,21 @@ async function spawnWild(cx=0.5, cy=0.5){
   const wildLv = lo + Math.floor(Math.random()*(hi-lo+1));
   const p = {...base, level:wildLv, xp:0,
     basePower:base.basePower||base.power,
-    baseAttack:base.attack,
-    baseDefense:base.defense||50,
-    baseSpdef:base.spdef||50,
+    baseAttack:base.attack,   baseSpatk:base.spatk||base.attack,
+    baseDefense:base.defense||50, baseSpdef:base.spdef||50,
     power:Math.round((base.basePower||base.power)*(1+wildLv*0.1)),
     attack:Math.round(base.attack*(1+wildLv*0.1)),
+    spatk:Math.round((base.spatk||base.attack)*(1+wildLv*0.1)),
     defense:Math.round((base.defense||50)*(1+wildLv*0.1)),
     spdef:Math.round((base.spdef||50)*(1+wildLv*0.1)),
     maxHP:Math.round((base.baseHP||50)*(1+wildLv*0.15)),
     currentHP:Math.round((base.baseHP||50)*(1+wildLv*0.15))};
-  const r = Math.random()<0.6?'common':Math.random()<0.85?'rare':Math.random()<0.97?'veryrare':'legendary';
-  const isShiny = Math.random() < 0.01; // 1% shiny
+  // Win streak scaling
+  const streak = S.winStreak||0;
+  const shinyRate   = streak>=30 ? 0.10 : streak>=20 ? 0.05 : streak>=10 ? 0.025 : 0.01;
+  const legendRate  = streak>=30 ? 0.12 : streak>=20 ? 0.06 : streak>=10 ? 0.03  : 0.013;
+  const r = Math.random()<legendRate ? 'legendary' : Math.random()<0.6?'common':Math.random()<0.85?'rare':'veryrare';
+  const isShiny = Math.random() < shinyRate;
   if(isShiny){ p.power=Math.round(p.power*1.15); p.attack=Math.round(p.attack*1.15); } // +15% power
   S.wild={...p,rarity:r,canFight:true,fought:false,shiny:isShiny};
   // Track seen
@@ -2230,27 +2244,42 @@ async function doFieldBattle(){
   document.getElementById('wild-btns-area').innerHTML = '<div style="color:#f8d030;font-size:13px;font-weight:700;text-align:center;">⚔️ נלחם...</div>';
   const log = document.getElementById('wild-battle-log');
   log.style.display='block'; log.innerHTML='';
-  // attack already level-scaled, use defense for damage reduction
-  const pAtkStat = fighter.attack; // already includes level
-  const eAtkStat = enemy.attack;
+  // AUTO: pick best move — type (spatk vs spdef) or normal (attack vs def), whichever hits harder
   const pTypeMult = (TC[fighter.type]||{})[enemy.type] ?? 1;
   const eTypeMult = (TC[enemy.type]||{})[fighter.type] ?? 1;
+
+  // Player: compare type dmg vs normal dmg and pick best
+  const pTypeAtk  = Math.round((fighter.spatk||fighter.attack) / Math.max(1,enemy.spdef||50) * 80 * pTypeMult);
+  const pNormAtk  = Math.round((fighter.attack) / Math.max(1,enemy.defense||50) * 80);
+  const pUsesType = pTypeAtk >= pNormAtk;
+  const pAtkStat  = pUsesType ? (fighter.spatk||fighter.attack) : fighter.attack;
+  const pDefStat  = pUsesType ? Math.max(1,enemy.spdef||50) : Math.max(1,enemy.defense||50);
+  const pMult     = pUsesType ? pTypeMult : 1;
+
+  // Enemy: same logic
+  const eTypeAtk  = Math.round((enemy.spatk||enemy.attack) / Math.max(1,fighter.spdef||50) * 80 * eTypeMult);
+  const eNormAtk  = Math.round((enemy.attack) / Math.max(1,fighter.defense||50) * 80);
+  const eUsesType = eTypeAtk >= eNormAtk;
+  const eAtkStat  = eUsesType ? (enemy.spatk||enemy.attack) : enemy.attack;
+  const eDefStat  = eUsesType ? Math.max(1,fighter.spdef||50) : Math.max(1,fighter.defense||50);
+  const eMult     = eUsesType ? eTypeMult : 1;
+
   const fMaxHP = Math.round((fighter.baseHP||50)*(1+(fighter.level||1)*0.15));
   const eMaxHP = Math.round((enemy.baseHP||50)*(1+(enemy.level||1)*0.15));
   let pHP = fMaxHP, eHP = eMaxHP;
   const lines = [];
   let rounds = 0;
   while(pHP>0 && eHP>0 && rounds++<30){
-    const eDef = Math.max(1, enemy.defense||50);
-    const pDmg = Math.max(1, Math.round((pAtkStat/eDef)*80*pTypeMult*(0.85+Math.random()*0.3)));
+    const pDmg = Math.max(1, Math.round((pAtkStat/pDefStat)*80*pMult*(0.85+Math.random()*0.3)));
     eHP = Math.max(0, eHP-pDmg);
-    const effTxt = pTypeMult>=2?' 🔥 יעיל!':pTypeMult<=0.5?' 🛡 לא יעיל':'';
-    lines.push(`${fighter.name.toUpperCase()} תקף ${pDmg}${effTxt}`);
+    const effTxt = pMult>=2?' 🔥 יעיל!':pMult<=0.5?' 🛡 לא יעיל':'';
+    const moveIcon = pUsesType ? '✨' : '⚔️';
+    lines.push(`${moveIcon} ${fighter.name.toUpperCase()} תקף ${pDmg}${effTxt}`);
     if(eHP<=0) break;
-    const pDef = Math.max(1, fighter.spdef||50);
-    const eDmg = Math.max(1, Math.round((eAtkStat/pDef)*80*eTypeMult*(0.85+Math.random()*0.3)));
+    const eDmg = Math.max(1, Math.round((eAtkStat/eDefStat)*80*eMult*(0.85+Math.random()*0.3)));
     pHP = Math.max(0, pHP-eDmg);
-    lines.push(`${enemy.name.toUpperCase()} תקף ${eDmg}`);
+    const eEffTxt = eMult>=2?' 🔥 יעיל!':eMult<=0.5?' 🛡 לא יעיל':'';
+    lines.push(`${enemy.name.toUpperCase()} תקף ${eDmg}${eEffTxt}`);
   }
   const won = pHP>0;
   // Show last 4 lines, fast if few rounds
@@ -2264,10 +2293,12 @@ async function doFieldBattle(){
     const xpTotal = effectivePower(enemy);
     log.innerHTML += `<div style="color:#38c878;font-weight:800;margin-top:4px;">✅ ניצחת! (+${xpTotal} XP)</div>`;
     S.wild.fought=true;
+    S.winStreak = (S.winStreak||0) + 1;
     await sleep(400);
     showWildButtons('won');
   } else {
     log.innerHTML += `<div style="color:#e3350d;font-weight:800;margin-top:4px;">😔 הפסדת...</div>`;
+    S.winStreak = 0;
     await sleep(800);
     log.style.display='none';
     finishEnc();
@@ -2294,6 +2325,7 @@ function releaseForXP(){
       p.level   = newLv;
       p.power   = Math.round((p.basePower||p.power)*(1+newLv*0.1));
       p.attack  = Math.round((p.baseAttack||p.attack)*(1+newLv*0.1));
+      p.spatk   = Math.round((p.baseSpatk||p.spatk||p.attack)*(1+newLv*0.1));
       p.defense = Math.round((p.baseDefense||p.defense||50)*(1+newLv*0.1));
       p.spdef   = Math.round((p.baseSpdef||p.spdef||50)*(1+newLv*0.1));
     }
@@ -2754,9 +2786,11 @@ async function fight1v1(pp, ep){
       await sleep(800);
       break; // end this 1v1, runBattleLoop will pick next pokemon
     } else {
-      // ATK vs DEF — no double-scaling, attack already includes level
-      const pDef = Math.max(1, ep.defense||50);
-      const pDmg = Math.max(1, Math.round((pp.attack / pDef) * 80 * chosenMult * (0.85+Math.random()*0.3)));
+      // player move: type → spatk vs spdef | normal → attack vs defense
+      const isTypeMove = chosenMult > 1;
+      const ppAtk = isTypeMove ? (pp.spatk||pp.attack) : pp.attack;
+      const pDef  = Math.max(1, isTypeMove ? (ep.spdef||50) : (ep.defense||50));
+      const pDmg  = Math.max(1, Math.round((ppAtk / pDef) * 80 * chosenMult * (0.85+Math.random()*0.3)));
       ep.currentHP = Math.max(0, ep.currentHP - pDmg);
       updateHPBar('enemy', ep.currentHP, ep.maxHP);
       flashHit('b-enemy-sprite');
@@ -2768,12 +2802,16 @@ async function fight1v1(pp, ep){
     }
 
     // --- ENEMY TURN: AI picks best move ---
-    const eNorm  = 1;
-    const eType  = (TC[ep.type]||{})[pp.type] ?? 1;
-    const eMult  = eType>=1 ? eType : eNorm;
-    // enemy uses spatk vs player spdef
-    const eDef = Math.max(1, pp.spdef||50);
-    const eDmg = Math.max(1, Math.round((ep.attack / eDef) * 80 * eMult * (0.85+Math.random()*0.3)));
+    // enemy auto: pick best move
+    const eTypeMult2 = (TC[ep.type]||{})[pp.type] ?? 1;
+    const eTypeDmg2 = (ep.spatk||ep.attack) / Math.max(1,pp.spdef||50) * eTypeMult2;
+    const eNormDmg2 = ep.attack / Math.max(1,pp.defense||50);
+    const eUsesType2 = eTypeDmg2 >= eNormDmg2;
+    const eAtk2 = eUsesType2 ? (ep.spatk||ep.attack) : ep.attack;
+    const eDef2 = Math.max(1, eUsesType2 ? (pp.spdef||50) : (pp.defense||50));
+    const eMult = eUsesType2 ? eTypeMult2 : 1;
+    const eDef  = eDef2;
+    const eDmg  = Math.max(1, Math.round((eAtk2 / eDef) * 80 * eMult * (0.85+Math.random()*0.3)));
     pp.currentHP = Math.max(0, pp.currentHP - eDmg);
     updateHPBar('player', pp.currentHP, pp.maxHP);
     flashHit('b-player-sprite');
@@ -3253,8 +3291,50 @@ function renderPokedex(){
       <div style="font-size:9px;font-weight:700;color:#fff;margin-top:2px;">${p.name.toUpperCase()}</div>
       <div style="font-size:9px;color:#f8d030;">⚡${p.power}</div>
       <span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;background:${typeColor(p.type)};color:#fff;">${p.type}</span>`;
+    card.style.cursor='pointer';
+    card.addEventListener('click', ()=>openDexDetail(p));
     grid.appendChild(card);
   });
+}
+
+function openDexDetail(p){
+  const existing = document.getElementById('dex-detail-popup');
+  if(existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id = 'dex-detail-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);';
+  const tc = {fire:'#ff6b35',water:'#4488ff',grass:'#38c878',electric:'#f8d030',ice:'#88ddff',
+    fighting:'#ff7744',ghost:'#aa66dd',dragon:'#7766ff',normal:'#aaaaaa',
+    psychic:'#ff44aa',rock:'#bbaa66',ground:'#ddbb55',poison:'#aa44aa',
+    flying:'#88aaff',bug:'#88bb44',steel:'#aaaacc',dark:'#554433',fairy:'#ffaacc'};
+  const col = tc[p.type]||'#888';
+  // Stats at lv1 = base stats
+  const stats = [
+    {name:'HP',     val:p.baseHP||50,  max:255, col:'#e35555'},
+    {name:'Attack', val:p.attack||50,  max:190, col:'#f8a030'},
+    {name:'Sp.Atk', val:p.spatk||50,   max:194, col:'#6688ff'},
+    {name:'Defense',val:p.defense||50, max:230, col:'#38c878'},
+    {name:'Sp.Def', val:p.spdef||50,   max:230, col:'#aa66dd'},
+  ];
+  const bars = stats.map(s=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+      <div style="width:52px;font-size:10px;color:#aaa;text-align:right;">${s.name}</div>
+      <div style="flex:1;height:7px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;">
+        <div style="width:${Math.round(s.val/s.max*100)}%;height:100%;background:${s.col};border-radius:4px;"></div>
+      </div>
+      <div style="width:28px;font-size:10px;font-weight:700;color:#fff;">${s.val}</div>
+    </div>`).join('');
+  popup.innerHTML = `
+    <div style="background:#0d1b2e;border:2px solid ${col}44;border-radius:20px;padding:24px 20px;max-width:300px;width:88%;text-align:center;font-family:Outfit,sans-serif;">
+      <img src="${p.sprite}" style="width:96px;height:96px;image-rendering:pixelated;">
+      <div style="font-size:11px;color:#555;margin-top:2px;">#${p.id}</div>
+      <div style="font-size:20px;font-weight:900;color:#fff;margin:4px 0;">${p.name.toUpperCase()}</div>
+      <span style="font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px;background:${col};color:#fff;">${p.type}</span>
+      <div style="margin:16px 0 8px;text-align:right;">${bars}</div>
+      <button style="font-family:Outfit,sans-serif;margin-top:8px;padding:9px 24px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:none;color:#888;font-size:13px;cursor:pointer;touch-action:manipulation;" onclick="document.getElementById('dex-detail-popup').remove()">✕ סגור</button>
+    </div>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click', e=>{ if(e.target===popup) popup.remove(); });
 }
 
 function toggleDexSort(){
@@ -3274,6 +3354,8 @@ function doContinue(){
     if(!p) return;
     const lv = p.level||1;
     if(!p.basePower)    p.basePower    = p.power;
+    if(!p.baseSpatk)    p.baseSpatk    = p.spatk||p.attack;
+    p.spatk = Math.round(p.baseSpatk*(1+(p.level||1)*0.1));
     if(!p.baseAttack)   p.baseAttack   = p.spatk ? Math.round(p.attack/(1+(lv*0.1))) : p.attack;
     if(!p.baseDefense)  p.baseDefense  = p.defense||50;
     if(!p.baseSpdef)    p.baseSpdef    = p.spdef||50;
@@ -3371,9 +3453,10 @@ function pcPokeOptions(idx, p){
         ? `<button onclick="pcToTeam(${idx})" style="width:100%;font-family:Outfit,sans-serif;font-size:14px;font-weight:800;padding:12px;border:2px solid #38c878;border-radius:12px;background:rgba(56,200,120,.12);color:#38c878;cursor:pointer;margin-bottom:8px;">← העבר לצוות</button>`
         : `<div style="font-size:12px;color:#e3350d;margin-bottom:12px;">הצוות מלא (6/6)</div>`
       }
-      <button onclick="document.getElementById('pc-popup').remove()" style="width:100%;font-family:Outfit,sans-serif;font-size:13px;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">ביטול</button>
+      <button onclick="document.getElementById('pc-popup').remove()" style="width:100%;font-family:Outfit,sans-serif;font-size:13px;padding:9px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">✕ סגור</button>
     </div>`;
   document.body.appendChild(popup);
+  popup.addEventListener('click', e=>{ if(e.target===popup) popup.remove(); });
 }
 
 function showTeamPokeOptions(teamIdx, p, teamSize){
