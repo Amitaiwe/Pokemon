@@ -54,6 +54,228 @@ onAuthStateChanged(fbAuth, user => {
     }, 50);
   }
 });
+
+
+// ════════════════════════════════════════════
+// ELITE FOUR
+// ════════════════════════════════════════════
+function typeColor(t){
+  const TC2={fire:'#ff6b35',water:'#4488ff',grass:'#38c878',electric:'#f8d030',ice:'#88ddff',
+    fighting:'#ff7744',ghost:'#aa66dd',dragon:'#7766ff',normal:'#aaaaaa',
+    psychic:'#ff44aa',rock:'#bbaa66',ground:'#ddbb55',poison:'#aa44aa',
+    flying:'#88aaff',bug:'#88bb44',steel:'#aaaacc',dark:'#554433',fairy:'#ffaacc'};
+  return TC2[t]||'#888';
+}
+
+async function fetchElitePoke(id){
+  try {
+    const d = await (await fetch('https://pokeapi.co/api/v2/pokemon/'+id)).json();
+    const atk = d.stats.find(s=>s.stat.name==='attack').base_stat;
+    const spa = d.stats.find(s=>s.stat.name==='special-attack').base_stat;
+    const def = d.stats.find(s=>s.stat.name==='defense').base_stat;
+    const spd = d.stats.find(s=>s.stat.name==='special-defense').base_stat;
+    const hp  = d.stats.find(s=>s.stat.name==='hp').base_stat;
+    return {id, name:d.name, sprite:d.sprites.front_default,
+      type:d.types[0].type.name,
+      attack:atk, spatk:spa, defense:def, spdef:spd, baseHP:hp,
+      power:atk+spa, basePower:atk+spa};
+  } catch(e) { return null; }
+}
+
+async function startEliteFour(){
+  if(!S.eliteIdx) S.eliteIdx = 0;
+  const el = ELITE_FOUR[S.eliteIdx];
+  
+  const ov = document.getElementById('elite-overlay');
+  ov.style.display = 'flex';
+  document.getElementById('gym-overlay').style.display = 'none';
+  
+  document.getElementById('elite-badge').textContent = el.icon;
+  document.getElementById('elite-name').textContent = el.name + (S.eliteIdx===4?' - אלוף!':'');
+  const typeEl = document.getElementById('elite-type');
+  typeEl.textContent = el.type;
+  typeEl.style.background = typeColor(el.type);
+  typeEl.style.color = '#fff';
+  
+  // טען ספרייטים
+  const spritesDiv = document.getElementById('elite-sprites');
+  spritesDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:12px;">טוען...</div>';
+  
+  const pokes = await Promise.all(el.pokes.map(fetchElitePoke));
+  const validPokes = pokes.filter(Boolean);
+  
+  spritesDiv.innerHTML = validPokes.map(p=>
+    '<img src="'+p.sprite+'" style="width:52px;height:52px;image-rendering:pixelated;" title="'+p.name+'">'
+  ).join('');
+  
+  document.getElementById('elite-log').textContent = 'קרב מתחיל בקרוב...';
+  
+  const btns = document.getElementById('elite-btns');
+  btns.innerHTML = '';
+  
+  const fightBtn = document.createElement('button');
+  fightBtn.style.cssText = 'font-family:Outfit,sans-serif;font-size:15px;font-weight:800;padding:14px;border:2px solid '+typeColor(el.type)+';border-radius:13px;background:rgba('+hexToRgb(typeColor(el.type))+', .15);color:#fff;cursor:pointer;touch-action:manipulation;';
+  fightBtn.textContent = '⚔️ הלחם נגד ' + el.name;
+  fightBtn.addEventListener('click', ()=>fightElite(validPokes, el));
+  btns.appendChild(fightBtn);
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return r+','+g+','+b;
+}
+
+async function fightElite(enemyPokes, el){
+  const btns = document.getElementById('elite-btns');
+  btns.innerHTML = '';
+  const log = document.getElementById('elite-log');
+  log.textContent = '';
+  
+  // בנה אויבים עם level scaling
+  const lv = el.lv;
+  const enemies = enemyPokes.map(p=>({...p,
+    level:lv,
+    attack:Math.round(p.attack*(1+lv*0.1)),
+    spatk:Math.round(p.spatk*(1+lv*0.1)),
+    defense:Math.round(p.defense*(1+lv*0.1)),
+    spdef:Math.round(p.spdef*(1+lv*0.1)),
+    maxHP:Math.round(p.baseHP*(1+lv*0.15)),
+    currentHP:Math.round(p.baseHP*(1+lv*0.15))
+  }));
+  
+  const team = S.team.filter(Boolean).slice(0,6);
+  if(!team.length){ log.textContent='אין פוקימונים בצוות!'; return; }
+  
+  // קרב פשוט: כל פוקימון של שחקן נגד כל אויב בתור
+  let lines = [];
+  let playerAlive = [...team];
+  let enemyAlive = [...enemies];
+  let playerWins = 0;
+  let enemyWins = 0;
+  
+  for(let ei=0; ei<enemyAlive.length; ei++){
+    const ep = enemyAlive[ei];
+    let epHP = ep.maxHP;
+    let beaten = false;
+    
+    for(let pi=0; pi<playerAlive.length; pi++){
+      const pp = playerAlive[pi];
+      if(!pp) continue;
+      let ppHP = pp.maxHP || pp.currentHP || 50;
+      
+      // קרב 1v1 מהיר
+      const TC = {fire:{grass:2,ice:2,bug:2,steel:2,water:.5,rock:.5,dragon:.5},
+        water:{fire:2,ground:2,rock:2,grass:.5,dragon:.5},
+        grass:{water:2,ground:2,rock:2,fire:.5,flying:.5,bug:.5,dragon:.5},
+        electric:{water:2,flying:2,grass:.5,dragon:.5,ground:0},
+        ice:{grass:2,ground:2,flying:2,dragon:2,fire:.5,water:.5,steel:.5},
+        fighting:{normal:2,ice:2,rock:2,dark:2,steel:2,poison:.5,flying:.5,psychic:.5,bug:.5,ghost:0,fairy:.5},
+        ghost:{ghost:2,psychic:2,normal:0,dark:.5},
+        dragon:{dragon:2,steel:.5,fairy:0},
+        rock:{flying:2,bug:2,fire:2,ice:2,fighting:.5,ground:.5,steel:.5},
+        psychic:{fighting:2,poison:2,dark:0,steel:.5,psychic:.5}};
+      
+      let rounds = 0;
+      while(ppHP>0 && epHP>0 && rounds<30){
+        rounds++;
+        const pMult = (TC[pp.type]||{})[ep.type]??1;
+        const eMult = (TC[ep.type]||{})[pp.type]??1;
+        const pAtk = pp.spatk||pp.attack||50;
+        const eAtk = ep.spatk||ep.attack||50;
+        const pDef = Math.max(1, ep.spdef||50);
+        const eDef = Math.max(1, pp.spdef||50);
+        const pDmg = Math.max(1, Math.round(pAtk/pDef*60*pMult*(0.85+Math.random()*.3)));
+        const eDmg = Math.max(1, Math.round(eAtk/eDef*60*eMult*(0.85+Math.random()*.3)));
+        epHP = Math.max(0, epHP-pDmg);
+        if(epHP<=0) break;
+        ppHP = Math.max(0, ppHP-eDmg);
+      }
+      
+      if(epHP<=0){
+        lines.push('✅ '+pp.name.toUpperCase()+' ניצח את '+ep.name.toUpperCase());
+        playerWins++;
+        beaten=true;
+        break;
+      } else {
+        lines.push('❌ '+pp.name.toUpperCase()+' הובס על ידי '+ep.name.toUpperCase());
+        playerAlive[pi]=null;
+      }
+    }
+    if(!beaten) enemyWins++;
+  }
+  
+  const won = playerWins > enemyWins;
+  
+  // הצג לוג
+  log.innerHTML = lines.slice(-6).map(l=>'<div>'+l+'</div>').join('');
+  
+  await new Promise(r=>setTimeout(r,300));
+  
+  if(won){
+    eliteWin(el);
+  } else {
+    eliteLose(el, enemyPokes);
+  }
+}
+
+function eliteWin(el){
+  const log = document.getElementById('elite-log');
+  const btns = document.getElementById('elite-btns');
+  
+  if(S.eliteIdx < ELITE_FOUR.length-1){
+    // עוד אחד
+    addScore(100 + S.eliteIdx*50);
+    if(navigator.vibrate) navigator.vibrate([100,50,200]);
+    log.innerHTML += '<div style="color:#f8d030;font-weight:800;margin-top:8px;">🏆 ניצחת! ממשיך...</div>';
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.style.cssText = 'font-family:Outfit,sans-serif;font-size:15px;font-weight:800;padding:14px;border:2px solid #38c878;border-radius:13px;background:rgba(56,200,120,.15);color:#38c878;cursor:pointer;touch-action:manipulation;';
+    nextBtn.textContent = '▶️ המשך ל' + ELITE_FOUR[S.eliteIdx+1].name;
+    nextBtn.addEventListener('click', ()=>{
+      S.eliteIdx++;
+      saveGame();
+      startEliteFour();
+    });
+    btns.innerHTML = '';
+    btns.appendChild(nextBtn);
+  } else {
+    // ניצחת את כולם!
+    addScore(500);
+    S.eliteBeaten = true;
+    saveGame();
+    document.getElementById('elite-overlay').style.display = 'none';
+    showVictory();
+  }
+}
+
+function eliteLose(el, enemyPokes){
+  const log = document.getElementById('elite-log');
+  const btns = document.getElementById('elite-btns');
+  
+  log.innerHTML += '<div style="color:#e3350d;font-weight:800;margin-top:8px;">😔 הפסדת! אמן את הצוות ונסה שוב.</div>';
+  
+  const retryBtn = document.createElement('button');
+  retryBtn.style.cssText = 'font-family:Outfit,sans-serif;font-size:15px;font-weight:800;padding:14px;border:2px solid #e3350d;border-radius:13px;background:rgba(227,53,13,.12);color:#e3350d;cursor:pointer;touch-action:manipulation;';
+  retryBtn.textContent = '🔄 נסה שוב';
+  retryBtn.addEventListener('click', ()=>fightElite(enemyPokes, el));
+  
+  const exitBtn = document.createElement('button');
+  exitBtn.style.cssText = 'font-family:Outfit,sans-serif;font-size:14px;font-weight:700;padding:12px;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);cursor:pointer;touch-action:manipulation;';
+  exitBtn.textContent = '← חזור לעולם';
+  exitBtn.addEventListener('click', ()=>{
+    document.getElementById('elite-overlay').style.display='none';
+    S.eliteIdx = 0;
+    saveGame();
+    continueJourney();
+  });
+  
+  btns.innerHTML = '';
+  btns.appendChild(retryBtn);
+  btns.appendChild(exitBtn);
+}
+
 </script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -110,21 +332,26 @@ body {
 }
 
 /* ── WILD POKEMON ── */
-/* The outer card: column layout, fixed max-height, NO overflow */
+#wild-wrap {
+  position:fixed; inset:0; z-index:20;
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none;
+}
 
-/* Info section: scrollable internally */
-
-/* Buttons section: ALWAYS visible, NEVER hidden */
+#wild-card {
+  pointer-events:all;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+  background:rgba(0,0,0,.6);
+  border:2px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  padding:20px 24px 16px;
+  backdrop-filter:blur(6px);
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+}
 
 @keyframes popIn { from{transform:scale(0) rotate(-10deg);opacity:0} to{transform:scale(1);opacity:1} }
-@keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
-@keyframes shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
-@keyframes starBurst { 0%{transform:translate(-50%,-50%) scale(0);opacity:1} 100%{transform:translate(-50%,-50%) scale(4);opacity:0} }
-@keyframes fadeInScale { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
-@keyframes evoWhiteFlash { 0%{opacity:0} 50%{opacity:1} 100%{opacity:0} }
-@keyframes evoSpriteGrow { 0%{transform:scale(1);filter:brightness(1)} 30%{transform:scale(0.8);filter:brightness(10) saturate(0)} 60%{transform:scale(1.4);filter:brightness(10) saturate(0)} 100%{transform:scale(1);filter:brightness(1)} }
-@keyframes evoParticle { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--px),var(--py)) scale(0);opacity:0} }
-@keyframes evoNameIn { 0%{opacity:0;transform:translateY(12px) scale(0.8)} 100%{opacity:1;transform:translateY(0) scale(1)} }
 @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
 @keyframes sparkAnim { 0%{transform:scale(0) rotate(0);opacity:1} 100%{transform:scale(3) rotate(180deg);opacity:0} }
 @keyframes glowPulse { 0%,100%{box-shadow:0 0 6px rgba(248,208,48,.5)} 50%{box-shadow:0 0 18px rgba(248,208,48,.9),0 0 30px rgba(248,208,48,.4)} }
@@ -133,6 +360,11 @@ body {
 @keyframes lvlGlow { 0%{box-shadow:0 0 0 rgba(248,208,48,0)} 30%{box-shadow:0 0 30px rgba(248,208,48,.9),0 0 60px rgba(248,208,48,.5)} 100%{box-shadow:0 0 0 rgba(248,208,48,0)} }
 @keyframes lvlPop { 0%{transform:translate(-50%,-50%) scale(0.5);opacity:0} 40%{transform:translate(-50%,-50%) scale(1.15);opacity:1} 80%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-50%) scale(1);opacity:0} }
 
+#wild-sprite {
+  width:130px; height:130px; image-rendering:pixelated;
+  animation:float 2s ease-in-out infinite;
+  filter:drop-shadow(0 0 20px rgba(255,255,255,.45));
+}
 .poke-name { font-size:22px; font-weight:800; color:#fff; text-shadow:0 0 12px rgba(255,255,255,.4); }
 .rarity-pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:1px; }
 .r-common    { background:#555; color:#eee; }
@@ -141,6 +373,20 @@ body {
 .r-legendary { background:linear-gradient(135deg,#f39c12,#e74c3c); color:#fff; box-shadow:0 0 14px rgba(243,156,18,.8); }
 .poke-stats { display:flex; gap:16px; font-size:13px; font-weight:600; color:rgba(255,255,255,.7); }
 .type-pill  { font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; color:#fff; }
+.wbtn {
+  font-family:'Outfit',sans-serif;font-weight:800;font-size:13px;
+  border:2px solid;border-radius:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:10px 14px;transition:all .15s;
+}
+.wbtn-fight { background:#e3350d;border-color:#8b1a00;color:#fff;flex:1; }
+.wbtn-flee  { background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#aaa;flex:1; }
+.wbtn-xp    { background:rgba(248,208,48,.15);border-color:#f8d030;color:#f8d030;flex:1; }
+.wbtn-pball { background:#e3350d;border-color:#8b1a00;color:#fff;padding:8px 10px; }
+.wbtn-gball { background:#2266cc;border-color:#0a3a8a;color:#fff;padding:8px 10px; }
+.wbtn-mball { background:#8822cc;border-color:#4a0080;color:#fff;padding:8px 10px; }
+.wbtn:hover { transform:scale(1.05); }
+
 .btn {
   font-family:'Outfit',sans-serif;
   font-size:14px; font-weight:700; padding:9px 18px;
@@ -726,9 +972,8 @@ body {
 .pc-poke-card .pc-name { font-size:9px; font-weight:800; color:#fff; }
 .pc-poke-card .pc-lv   { font-size:9px; color:#88ccff; }
 /* Team pokemon — send to PC option */
-.hof-poke-card { cursor:pointer; transition:transform .18s cubic-bezier(.34,1.4,.64,1), box-shadow .18s, background .18s; }
-.hof-poke-card:hover { background:rgba(255,255,255,.1); transform:translateY(-4px) scale(1.03); box-shadow:0 8px 24px rgba(0,0,0,.4); }
-.hof-poke-card:active { transform:scale(0.97); }
+.hof-poke-card { cursor:pointer; }
+.hof-poke-card:hover { background:rgba(255,255,255,.1); }
 
 
 @keyframes pokeWobble {
@@ -761,83 +1006,6 @@ body {
 }
 .shiny-sprite { animation:shinySparkle 1.4s ease-in-out infinite; }
 .shiny-badge { font-size:11px; background:linear-gradient(135deg,#f8d030,#e3350d); color:#fff; font-weight:800; padding:2px 7px; border-radius:8px; letter-spacing:1px; }
-
-
-/* Battle log inside the scrollable card */
-
-
-/* ── BUTTONS AREA — always visible, never scrolls away ── */
-
-/* ══════════════════════════════════════════════ */
-
-/* ══ WILD ENCOUNTER ══ */
-
-/* ══ WILD BUTTONS ══ */
-
-/* ══════════ WILD ENCOUNTER ══════════ */
-/* ── wild buttons ── */
-/* ══════════════════════════════════ */
-
-/* ══ WILD ENCOUNTER (simple, reliable) ══ */
-#wild-wrap {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.6);
-  pointer-events: all;
-}
-#wild-card {
-  pointer-events: all;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  background: rgba(8,12,24,0.97);
-  border: 2px solid rgba(255,255,255,0.2);
-  border-radius: 18px;
-  padding: 18px 22px 18px;
-  width: min(310px, 88vw);
-  box-shadow: 0 10px 50px rgba(0,0,0,0.8);
-  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
-}
-#wild-btns-area {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  margin-top: 4px;
-}
-.wbtn {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  border: 2px solid;
-  border-radius: 11px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 12px 16px;
-  transition: transform .1s;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  user-select: none;
-  pointer-events: all;
-}
-.wbtn:active  { transform: scale(.93); }
-.wbtn-fight   { background:#c8250d; border-color:#7a1000; color:#fff; flex:1; }
-.wbtn-flee    { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.25); color:#bbb; flex:1; }
-.wbtn-xp      { background:rgba(248,208,48,.13); border-color:#f8d030; color:#f8d030; width:100%; }
-.wbtn-pball   { background:#c8250d; border-color:#7a1000; color:#fff; flex:1; }
-.wbtn-gball   { background:#1a55bb; border-color:#0a3080; color:#fff; flex:1; }
-.wbtn-mball   { background:#7711bb; border-color:#3d0070; color:#fff; flex:1; }
-/* ════════════════════════════════════ */
 </style>
 </head>
 <body>
@@ -869,7 +1037,20 @@ body {
 
 <div id="map-confetti"></div>
 <!-- ARENA CLICK LAYER -->
-<div id="arena" onclick="arenaClick(event)" oncontextmenu="emergencyReset(event)"></div>
+
+<!-- ELITE FOUR OVERLAY -->
+<div id="elite-overlay" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;">
+  <div id="elite-card" style="background:linear-gradient(160deg,#05101e,#0a1828);border:2px solid rgba(255,255,255,.15);border-radius:22px;padding:28px 24px;max-width:340px;width:92%;text-align:center;max-height:90vh;overflow-y:auto;">
+    <div id="elite-badge" style="font-size:52px;margin-bottom:8px;"></div>
+    <div id="elite-name" style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;"></div>
+    <div id="elite-type" style="font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:16px;"></div>
+    <div id="elite-sprites" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap;margin-bottom:16px;"></div>
+    <div id="elite-log" style="background:rgba(0,0,0,.4);border-radius:12px;padding:10px;font-size:12px;color:rgba(255,255,255,.7);min-height:60px;margin-bottom:16px;text-align:right;line-height:1.8;"></div>
+    <div id="elite-btns" style="display:flex;gap:10px;flex-direction:column;"></div>
+  </div>
+</div>
+
+<div id="arena" onclick="arenaClick()"></div>
 
 <!-- CLICK HINT -->
 <div id="click-hint">לחץ לגלות פוקימון</div>
@@ -915,12 +1096,11 @@ body {
 <!-- WILD POKEMON CARD -->
 <div id="wild-wrap">
   <div id="wild-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:6px;">
-      <span id="wild-rarity" class="rarity-pill"></span>
-      <span id="wild-level" style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.15);padding:2px 10px;border-radius:20px;border:1px solid rgba(56,200,120,.3);">Lv.1</span>
-      <span id="wild-shiny-badge" style="display:none;font-size:11px;font-weight:800;color:#f8d030;background:rgba(248,208,48,.12);padding:2px 8px;border-radius:20px;border:1px solid rgba(248,208,48,.35);">✨ שיינינ</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px;">
+      <span id="wild-rarity" style="display:none;"></span>
+      <span id="wild-level" style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.15);padding:2px 8px;border-radius:20px;border:1px solid rgba(56,200,120,.3);">Lv.1</span>
     </div>
-    <img id="wild-sprite" src="" alt="" style="width:130px;height:130px;image-rendering:pixelated;animation:float 2s ease-in-out infinite;">
+    <img id="wild-sprite" src="" alt="">
     <div class="poke-name" id="wild-name"></div>
     <div class="poke-stats">
       <span>⚔️ <span id="wild-atk"></span></span>
@@ -928,7 +1108,7 @@ body {
       <span>💪 <span id="wild-pow"></span></span>
     </div>
     <div id="wild-type"></div>
-    <div id="wild-battle-log" style="display:none;background:rgba(0,0,0,.4);border-radius:8px;padding:8px;font-size:11px;color:#fff;width:100%;max-height:72px;overflow-y:auto;text-align:right;line-height:1.6;"></div>
+    <div id="wild-battle-log" style="display:none;background:rgba(0,0,0,.4);border-radius:8px;padding:8px;font-size:12px;color:#fff;width:100%;max-height:80px;overflow-y:auto;text-align:right;line-height:1.6;"></div>
     <div id="wild-btns-area" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:4px;"></div>
   </div>
 </div>
@@ -955,7 +1135,17 @@ body {
 <span id="storage-count" style="display:none;">0</span>
 
 <!-- TEAM DRAWER -->
-<!-- team-panel removed -->
+<div id="team-panel">
+  <div id="team-title">
+    <span>🎒 הצוות שלי</span>
+    <button onclick="toggleTeam()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0;">✕</button>
+  </div>
+  <div id="team-slots"></div>
+  <div class="team-total">
+    <div class="total-lbl">עוצמה כוללת</div>
+    <div class="total-val" id="team-total">0</div>
+  </div>
+</div>
 
 <div id="storage-slots" style="display:none;"></div>
 
@@ -989,7 +1179,7 @@ body {
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
-    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.46</div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,.2);font-family:monospace;letter-spacing:1px;">v3.22+E4</div>
   </div>
 </div>
 
@@ -1260,22 +1450,13 @@ const TRAINERS = [
 ];
 const GYMS = [
   {name:'מכון פאלאט',   city:'עיר פאלאט', leader:'Gary',      type:'normal',  avg:110, badge:'Boulder Badge', badgeIcon:'🪨', badgeImg:'https://www.serebii.net/kanto/badge1.png', maxLv:12},
-  {name:'מכון פבלטאון', city:'פבלטאון',    leader:'Brock',     type:'rock',    avg:155, badge:'Cascade Badge', badgeIcon:'💦', badgeImg:'https://www.serebii.net/kanto/badge2.png', maxLv:22},
+  {name:'מכון פבלטאון', city:'פבלטאון',    leader:'Brock',     type:'rock',    avg:155, badge:'Cascade Badge', badgeIcon:'💦', badgeImg:'https://www.serebii.net/kanto/badge2.png', maxLv:23},
   {name:'מכון סרולאן',  city:'סרולאן',     leader:'Misty',     type:'water',   avg:200, badge:'Thunder Badge', badgeIcon:'🌊', badgeImg:'https://www.serebii.net/kanto/badge3.png', maxLv:30},
-  {name:'מכון ורמיליון',city:'ורמיליון',   leader:'Lt.Surge',  type:'electric',avg:255, badge:'Thunder Badge', badgeIcon:'⚡', badgeImg:'https://www.serebii.net/kanto/badge4.png', maxLv:40},
+  {name:'מכון ורמיליון',city:'ורמיליון',   leader:'Lt.Surge',  type:'electric',avg:255, badge:'Thunder Badge', badgeIcon:'⚡', badgeImg:'https://www.serebii.net/kanto/badge4.png', maxLv:41},
   {name:'מכון לאוונדר', city:'לאוונדר',    leader:'Erika',     type:'grass',   avg:315, badge:'Rainbow Badge', badgeIcon:'🌿', badgeImg:'https://www.serebii.net/kanto/badge5.png', maxLv:50},
-  {name:'מכון סאפרון',  city:'סאפרון',     leader:'Sabrina',   type:'psychic', avg:385, badge:'Marsh Badge',   badgeIcon:'🔮', badgeImg:'https://www.serebii.net/kanto/badge6.png', maxLv:61},
-  {name:'מכון פיוש',    city:'פיוש',       leader:'Blaine',    type:'fire',    avg:465, badge:'Volcano Badge', badgeIcon:'🔥', badgeImg:'https://www.serebii.net/kanto/badge7.png', maxLv:70},
-  {name:'מכון ורידיאן', city:'ורידיאן',    leader:'Giovanni',  type:'ground',  avg:570, badge:'Earth Badge',   badgeIcon:'🌍', badgeImg:'https://www.serebii.net/kanto/badge8.png', maxLv:81},
-];
-
-// ELITE FOUR + CHAMPION
-const ELITE_FOUR = [
-  {name:'ליגת האליטה 1', leader:'Lorelei',  type:'ice',      avg:700, maxLv:85, icon:'🧊'},
-  {name:'ליגת האליטה 2', leader:'Bruno',    type:'fighting', avg:750, maxLv:87, icon:'🥊'},
-  {name:'ליגת האליטה 3', leader:'Agatha',   type:'ghost',    avg:800, maxLv:89, icon:'👻'},
-  {name:'ליגת האליטה 4', leader:'Lance',    type:'dragon',   avg:850, maxLv:90, icon:'🐉'},
-  {name:'האלוף הראשי',   leader:'Amitai',   type:'normal',   avg:950, maxLv:99, icon:'👑', isChampion:true},
+  {name:'מכון סאפרון',  city:'סאפרון',     leader:'Sabrina',   type:'psychic', avg:385, badge:'Marsh Badge',   badgeIcon:'🔮', badgeImg:'https://www.serebii.net/kanto/badge6.png', maxLv:66},
+  {name:'מכון פיוש',    city:'פיוש',       leader:'Blaine',    type:'fire',    avg:465, badge:'Volcano Badge', badgeIcon:'🔥', badgeImg:'https://www.serebii.net/kanto/badge7.png', maxLv:80},
+  {name:'מכון ורידיאן', city:'ורידיאן',    leader:'Giovanni',  type:'ground',  avg:570, badge:'Earth Badge',   badgeIcon:'🌍', badgeImg:'https://www.serebii.net/kanto/badge8.png', maxLv:99},
 ];
 function xpForLevel(lv){ if(lv<=1) return 0; let t=0; for(let i=1;i<lv;i++) t+=100+i*50; return t; }
 function levelFromXp(xp){ let lv=1; while(xpForLevel(lv+1)<=xp) lv++; return lv; }
@@ -1318,11 +1499,9 @@ let cache={}, pending=null, selId=null, startPokes={}, _pcSelected=new Set();
 
 // ═══ SAVE / LOAD (Firebase + localStorage fallback) ═══
 const pSave = p=>p?{id:p.id,name:p.name,sprite:p.sprite,
-  attack:p.attack,   baseAttack:p.baseAttack||p.attack,
-  spatk:p.spatk,     baseSpatk:p.baseSpatk||p.spatk,
-  defense:p.defense||50, baseDefense:p.baseDefense||p.defense||50,
-  spdef:p.spdef||50,     baseSpdef:p.baseSpdef||p.spdef||50,
-  baseHP:p.baseHP||50,   power:p.power, basePower:p.basePower||p.power,
+  attack:p.attack,spatk:p.spatk,defense:p.defense||50,spdef:p.spdef||50,baseHP:p.baseHP||50,
+  power:p.power,basePower:p.basePower||p.power,baseAttack:p.baseAttack||p.attack,
+  baseDefense:p.baseDefense||p.defense||50,baseSpdef:p.baseSpdef||p.spdef||50,
   type:p.type,evolved:p.evolved||false,shiny:p.shiny||false,
   level:p.level||1,xp:p.xp||0}:null;
 
@@ -1380,12 +1559,8 @@ async function fetchP(id){
     const hp  =d.stats.find(s=>s.stat.name==='hp').base_stat;
     const bp=atk+spa;
     const p={id,name:d.name,sprite:d.sprites.front_default,
-      attack:atk, baseAttack:atk,
-      spatk:spa,  baseSpatk:spa,
-      defense:def,baseDefense:def,
-      spdef:spd,  baseSpdef:spd,
-      baseHP:hp,  power:bp, basePower:bp,
-      type:d.types[0].type.name,level:1,xp:0};
+      attack:atk,spatk:spa,defense:def,spdef:spd,baseHP:hp,
+      power:bp,basePower:bp,type:d.types[0].type.name,level:1,xp:0};
     cache[id]=p;return p;
   }catch{return null;}
 }
@@ -1460,16 +1635,13 @@ async function fetchGym(gi){
       // Clamp basePower to avoid wildly overpowered pokemon
       const clampedBase = Math.min(p.basePower||p.power, powerCap);
       const baseAtk = Math.min(p.attack, powerCap*0.7);
-      const baseSpa = p.spatk||p.attack;
       const baseDef = p.defense||50;
       const baseSpd = p.spdef||50;
       const baseHp  = p.baseHP||50;
       team.push({...p, level:lv, xp:0, basePower:clampedBase,
-        baseAttack:baseAtk, baseSpatk:baseSpa,
-        baseDefense:baseDef, baseSpdef:baseSpd,
+        baseAttack:baseAtk, baseDefense:baseDef, baseSpdef:baseSpd,
         power:Math.round(clampedBase*(1+lv*0.1)),
         attack:Math.round(baseAtk*(1+lv*0.1)),
-        spatk:Math.round(baseSpa*(1+lv*0.1)),
         defense:Math.round(baseDef*(1+lv*0.1)),
         spdef:Math.round(baseSpd*(1+lv*0.1)),
         maxHP:Math.round(baseHp*(1+lv*0.15)),
@@ -1480,7 +1652,9 @@ async function fetchGym(gi){
 }
 
 // ═══════════════ UI ═══════════════
-function toggleTeam(){ /* team panel removed */ }
+function toggleTeam(){
+  document.getElementById('team-panel').classList.toggle('open');
+}
 let _swapSrcIdx = null;
 
 
@@ -1506,9 +1680,9 @@ function teamToStorage(teamIdx){
 function teamTap(i){
   const arr = S.team.filter(Boolean);
   if(_swapSrcIdx === null){
-    // פתח מסך פוקימון
-    const p = arr[i];
-    if(p) openPokeDetail(p, 'team', {teamIdx:i, teamSize:arr.length});
+    // First tap: select
+    _swapSrcIdx = i;
+    updateTeam();
   } else if(_swapSrcIdx === i){
     // Tap same: deselect
     _swapSrcIdx = null;
@@ -1582,22 +1756,17 @@ function updateTeam(){
 }
 
 function updateBadges(){
-  const c=document.getElementById('badges-row');
-  if(c){ c.innerHTML=''; for(let i=0;i<8;i++){ const b=document.createElement('div'); b.className=`bdg ${i<S.badges?'on':'off'}`; b.textContent=i<S.badges?GYMS[i].badgeIcon:'·'; b.title=GYMS[i].badge; c.appendChild(b); } }
-  const fill=document.getElementById('badges-progress-fill');
-  if(fill) fill.style.width=Math.round((S.badges/8)*100)+'%';
-  const bar=document.getElementById('badges-progress-bar');
-  if(bar) bar.title=`${S.badges}/8 תגים`;
+  const c=document.getElementById('badges-row');c.innerHTML='';
+  for(let i=0;i<8;i++){
+    const b=document.createElement('div');
+    b.className=`bdg ${i<S.badges?'on':'off'}`;
+    b.textContent=i<S.badges ? GYMS[i].badgeIcon : '·';
+    b.title=GYMS[i].badge;
+    c.appendChild(b);
+  }
 }
 
 function updateCounters(){
-  // egg indicator
-  const eggEl = document.getElementById('egg-indicator');
-  if(eggEl){
-    if(S.egg){ eggEl.style.display='flex'; eggEl.title=`ביצה: ${S.egg.hatchCount||0}/100`; eggEl.querySelector('span').textContent=`🥚 ${S.egg.hatchCount||0}/100`; }
-    else if(S.pendingEgg){ eggEl.style.display='flex'; eggEl.querySelector('span').textContent='🥚 !!!'; }
-    else eggEl.style.display='none';
-  }
   document.getElementById('ball-count').textContent=S.balls;
   const gb=document.getElementById('great-ball-count'); if(gb) gb.textContent=S.greatBalls;
   const mb=document.getElementById('master-ball-count'); if(mb) mb.textContent=S.masterBalls;
@@ -1764,107 +1933,30 @@ async function arenaClick(e){
   S.catching=true;
   document.getElementById('click-hint').style.display='none';
   showWildButtons('hide');
-  try {
-    // Always: 2% stone, 2% pokeball, 1% greatball
-    const dropRoll = Math.random();
-    if(dropRoll < 0.02){
-      S.catching=false;
-      foundEvolutionStone();
-      return;
-    } else if(dropRoll < 0.04){
-      S.catching=false;
-      foundBall('poke');
-      return;
-    } else if(dropRoll < 0.05){
-      S.catching=false;
-      foundBall('great');
-      return;
-    }
-    const rect = document.getElementById('arena').getBoundingClientRect();
-    const cx = e ? (e.clientX - rect.left) / rect.width : 0.5;
-    const cy = e ? (e.clientY - rect.top) / rect.height : 0.5;
-    await spawnWild(cx, cy);
-  } catch(err){
-    console.error('arenaClick error:', err);
-    showToast('שגיאה, נסה שוב','#e3350d');
-  } finally {
+  // Always: 2% stone, 2% pokeball, 1% greatball
+  const dropRoll = Math.random();
+  if(dropRoll < 0.02){
     S.catching=false;
+    foundEvolutionStone();
+    return;
+  } else if(dropRoll < 0.04){
+    S.catching=false;
+    foundBall('poke');
+    return;
+  } else if(dropRoll < 0.05){
+    S.catching=false;
+    foundBall('great');
+    return;
   }
-}
-
-
-// ════════════════════════════════════════
-// EGG SYSTEM
-// ════════════════════════════════════════
-const EGG_STARTERS = [1,4,7,152,155,158,252,255,258,387,390,393,495,501,514];
-
-async function spawnEgg(){
-  const id = EGG_STARTERS[Math.floor(Math.random()*EGG_STARTERS.length)];
-  const p = await fetchP(id);
-  if(!p){ showToast('שגיאת טעינת ביצה','#e3350d'); return; }
-  S.wild = {...p, level:5, isEgg:true, fought:true};
-  const sprite = document.getElementById('wild-sprite');
-  sprite.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/egg.png';
-  sprite.style.filter = 'drop-shadow(0 0 20px rgba(248,208,48,.8))';
-  document.getElementById('wild-name').textContent = '🥚 ביצה מסתורית!';
-  document.getElementById('wild-level').textContent = 'Lv.?';
-  document.getElementById('wild-type').innerHTML = '<span class="type-pill" style="background:#888;">???</span>';
-  document.getElementById('wild-atk').textContent = '?';
-  document.getElementById('wild-spa').textContent = '?';
-  document.getElementById('wild-pow').textContent = '?';
-  document.getElementById('wild-rarity').style.display='none';
-  const btns = document.getElementById('wild-btns-area');
-  btns.innerHTML = `
-    <button class="wbtn" onclick="collectEgg()" style="flex:1;background:rgba(248,208,48,.15);border:2px solid #f8d030;color:#f8d030;font-family:Outfit,sans-serif;font-weight:800;font-size:13px;border-radius:10px;padding:10px 14px;cursor:pointer;">🥚 אסוף</button>
-    <button class="wbtn wbtn-flee" onclick="flee()" style="flex:1;">🏃 ברח</button>`;
-  document.getElementById('wild-wrap').style.display='flex';
-  document.getElementById('arena').style.pointerEvents='none';
-  sfx('encounter');
-  showToast('🥚 ביצה! מכילה פוקימון ראשוני נדיר!','#f8d030');
-}
-
-async function collectEgg(){
-  if(!S.wild) return;
-  const p = S.wild;
-  const sprite = document.getElementById('wild-sprite');
-  // אנימציית בקיעה
-  for(let i=0;i<4;i++){
-    sprite.style.transform='rotate(-12deg) scale(1.05)'; await sleep(100);
-    sprite.style.transform='rotate(12deg) scale(1.05)';  await sleep(100);
-  }
-  sprite.style.transition='transform .3s,opacity .3s';
-  sprite.style.transform='scale(0)'; sprite.style.opacity='0';
-  await sleep(320);
-  sprite.src = p.sprite;
-  sprite.style.filter = 'drop-shadow(0 0 20px '+typeColor(p.type)+'aa)';
-  sprite.style.opacity='1'; sprite.style.transform='scale(1.3)';
-  await sleep(200);
-  sprite.style.transform='scale(1)';
-  sprite.style.transition='';
-  document.getElementById('wild-name').textContent = p.name.toUpperCase()+' בקע! 🌟';
-  document.getElementById('wild-type').innerHTML='<span class="type-pill" style="background:'+typeColor(p.type)+'">'+p.type+'</span>';
-  sfx('evolve');
-  showToast('✨ '+p.name.toUpperCase()+' יצא מהביצה!','#38c878');
-  await sleep(900);
-  // לכידה אוטומטית
-  if(!S.stats) S.stats={met:0,wonWild:0,lostWild:0,ballsThrown:0,caught:0,fled:0,shinySeen:0};
-  S.stats.caught=(S.stats.caught||0)+1;
-  if(!S.caught) S.caught=[];
-  if(!S.caught.includes(p.id)) S.caught.push(p.id);
-  if(!S.pokedex) S.pokedex=[];
-  if(!S.pokedex.includes(p.id)) S.pokedex.push(p.id);
-  addEvoChainToPokedex(p.id);
-  const cp = {...p, level:5, xp:0,
-    baseAttack:p.baseAttack||p.attack, baseSpatk:p.baseSpatk||p.spatk||p.attack,
-    baseDefense:p.baseDefense||50, baseSpdef:p.baseSpdef||50, baseHP:p.baseHP||50};
-  const teamSize = S.team.filter(Boolean).length;
-  if(teamSize < 6){ S.team.push(cp); updateTeam(); }
-  else { S.storage=S.storage||[]; S.storage.push(cp); showToast(p.name.toUpperCase()+' נשלח למחשב!','#88ccff'); }
-  saveGame(); checkAchievements(); finishEnc();
+  // Get click coordinates for biome mapping
+  const rect = document.getElementById('arena').getBoundingClientRect();
+  const cx = e ? (e.clientX - rect.left) / rect.width : 0.5;
+  const cy = e ? (e.clientY - rect.top) / rect.height : 0.5;
+  await spawnWild(cx, cy);
+  S.catching=false;
 }
 
 async function spawnWild(cx=0.5, cy=0.5){
-  if(S.pendingEgg){ S.pendingEgg=false; spawnEgg(); return; }
   // Pick type based on biome, then random pokemon of that type
   const biomeType = pickBiomeType(cx, cy);
   const pool = TYPE_POOLS[biomeType] || TYPE_POOLS.normal;
@@ -1880,64 +1972,26 @@ async function spawnWild(cx=0.5, cy=0.5){
   const wildLv = lo + Math.floor(Math.random()*(hi-lo+1));
   const p = {...base, level:wildLv, xp:0,
     basePower:base.basePower||base.power,
-    baseAttack:base.attack,   baseSpatk:base.spatk||base.attack,
-    baseDefense:base.defense||50, baseSpdef:base.spdef||50,
+    baseAttack:base.attack,
+    baseDefense:base.defense||50,
+    baseSpdef:base.spdef||50,
     power:Math.round((base.basePower||base.power)*(1+wildLv*0.1)),
     attack:Math.round(base.attack*(1+wildLv*0.1)),
-    spatk:Math.round((base.spatk||base.attack)*(1+wildLv*0.1)),
     defense:Math.round((base.defense||50)*(1+wildLv*0.1)),
     spdef:Math.round((base.spdef||50)*(1+wildLv*0.1)),
     maxHP:Math.round((base.baseHP||50)*(1+wildLv*0.15)),
     currentHP:Math.round((base.baseHP||50)*(1+wildLv*0.15))};
-  // Streak bonuses: x2 @15, 5% @30, 7% @50
-  const streak = S.winStreak||0;
-  let shinyRate = 0.018;
-  let legendaryThresh = 0.783; // ~1.3%
-  if(streak >= 50){ shinyRate = 0.07; legendaryThresh = 0.86; }
-  else if(streak >= 30){ shinyRate = 0.05; legendaryThresh = 0.84; }
-  else if(streak >= 15){ shinyRate = 0.036; legendaryThresh = 0.805; } // x2 of base
-  const r = Math.random()<0.6?'common':Math.random()<0.85?'rare':Math.random()<legendaryThresh?'veryrare':'legendary';
-  const isShiny = Math.random() < shinyRate;
-  if(isShiny){ // +15% כל הסטטים
-    p.power   = Math.round(p.power*1.15);
-    p.attack  = Math.round(p.attack*1.15);
-    p.spatk   = Math.round((p.spatk||p.attack)*1.15);
-    p.defense = Math.round((p.defense||50)*1.15);
-    p.spdef   = Math.round((p.spdef||50)*1.15);
-    p.maxHP   = Math.round((p.maxHP||50)*1.15);
-    p.currentHP = p.maxHP;
-  }
+  const r = Math.random()<0.6?'common':Math.random()<0.85?'rare':Math.random()<0.97?'veryrare':'legendary';
+  const isShiny = Math.random() < 0.01; // 1% shiny
+  if(isShiny){ p.power=Math.round(p.power*1.15); p.attack=Math.round(p.attack*1.15); } // +15% power
   S.wild={...p,rarity:r,canFight:true,fought:false,shiny:isShiny};
-  if(!S.stats) S.stats={met:0,wonWild:0,lostWild:0,ballsThrown:0,caught:0,fled:0,shinySeen:0};
-  if(!S.winStreak) S.winStreak=0;
-  if(S.pendingEgg === undefined) S.pendingEgg=false;
-  S.stats.met=(S.stats.met||0)+1;
-  if(isShiny) S.stats.shinySeen=(S.stats.shinySeen||0)+1;
-  // בדיקת ביצה — 2% סיכוי למצוא ביצה (אם אין כבר ביצה)
-  if(!S.egg && Math.random() < 0.02){
-    S.egg = {hatchCount: 0};
-    showToast('🥚 מצאת ביצה! היא תבקע אחרי 100 פוקימונים שתפגוש','#f8d030');
-    saveGame();
-  }
-  // אם יש ביצה — עלה מונה
-  if(S.egg){
-    S.egg.hatchCount = (S.egg.hatchCount||0) + 1;
-    if(S.egg.hatchCount >= 100){
-      S.pendingEgg = true;
-      S.egg = null;
-      showToast('🥚 הביצה עומדת לבקוע!','#f8d030');
-      saveGame();
-    }
-  }
   // Track seen
-  if(!S.pokedex) S.pokedex=[];
   if(!S.pokedex.includes(p.id)) S.pokedex.push(p.id);
   addEvoChainToPokedex(p.id);
   // Render wild card
   const wildSprite = document.getElementById('wild-sprite');
   wildSprite.src=p.sprite;
   wildSprite.className = S.wild.shiny ? 'shiny-sprite' : '';
-  wildSprite.style.filter = `drop-shadow(0 0 20px ${typeColor(p.type)}aa) drop-shadow(0 4px 14px rgba(0,0,0,.5))`;
   const shinyBadge = document.getElementById('wild-shiny-badge');
   if(shinyBadge) shinyBadge.style.display = S.wild.shiny ? 'inline-block' : 'none';
   sfx(S.wild.shiny ? 'shiny' : 'encounter');
@@ -1950,7 +2004,6 @@ async function spawnWild(cx=0.5, cy=0.5){
   document.getElementById('wild-type').innerHTML=`<span class="type-pill" style="background:${typeColor(p.type)}">${p.type}</span>`;
   showWildButtons('initial'); // Fight / Flee (no catch until fought)
   document.getElementById('wild-wrap').style.display='flex';
-  document.getElementById('arena').style.pointerEvents='none';
 }
 
 function foundEvolutionStone(){ sfx('stone');
@@ -2079,87 +2132,33 @@ async function evolveWithStone(slotIdx){
     if(ti===slotIdx){ cardImg=allCards[cardCount]?.querySelector('img'); break; }
     cardCount++;
   }
-  // ── Full evolution cinematic ──
-  // 1. Fade to white overlay
-  const evoOverlay = document.createElement('div');
-  evoOverlay.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff;opacity:0;transition:opacity .4s;pointer-events:all;display:flex;align-items:center;justify-content:center;flex-direction:column;';
-  evoOverlay.innerHTML = `
-    <div id="evo-sprite-wrap" style="position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;">
-      <img id="evo-anim-sprite" src="${p.sprite}" style="width:120px;height:120px;image-rendering:pixelated;filter:brightness(1);transition:filter .15s;">
-    </div>
-    <div id="evo-anim-name" style="font-family:Outfit,sans-serif;font-size:22px;font-weight:900;color:#111;margin-top:16px;opacity:0;">${p.name.toUpperCase()}</div>
-    <div id="evo-anim-arrow" style="font-size:28px;margin:8px 0;opacity:0;">↓</div>
-    <div id="evo-anim-newname" style="font-family:Outfit,sans-serif;font-size:26px;font-weight:900;color:#e3350d;opacity:0;"></div>`;
-  document.body.appendChild(evoOverlay);
-  await sleep(30);
-  evoOverlay.style.opacity='1';
-  await sleep(500);
-  const evoSprite = document.getElementById('evo-anim-sprite');
-  const evoName   = document.getElementById('evo-anim-name');
-  const evoArrow  = document.getElementById('evo-anim-arrow');
-  const evoNew    = document.getElementById('evo-anim-newname');
-  // show name
-  evoName.style.transition='opacity .3s'; evoName.style.opacity='1';
-  await sleep(400);
-  // 2. Flash sequence
-  for(let i=0;i<6;i++){
-    evoSprite.style.filter='brightness(0) invert(1) saturate(0)';
-    await sleep(120);
-    evoSprite.style.filter='brightness(8)';
-    await sleep(120);
+  if(cardImg){
+    for(let i=0;i<4;i++){
+      cardImg.style.filter='brightness(0) invert(1)';
+      await sleep(180);
+      cardImg.style.filter='brightness(3)';
+      await sleep(180);
+    }
+    cardImg.style.filter='brightness(20)';
+    await sleep(350);
+    cardImg.src = evoData.sprite;
+    await sleep(100);
+    cardImg.style.filter='drop-shadow(0 0 12px #fff)';
+    await sleep(400);
+    cardImg.style.filter='';
   }
-  // 3. Grow + pure white
-  evoSprite.style.transition='transform .4s,filter .4s';
-  evoSprite.style.filter='brightness(20) saturate(0)';
-  evoSprite.style.transform='scale(1.5)';
-  await sleep(420);
-  // 4. Swap sprite
-  evoSprite.src = evoData.sprite;
-  // 5. Particles burst
-  const wrap = document.getElementById('evo-sprite-wrap');
-  const colors=['#f8d030','#38c878','#ff88cc','#88aaff','#ff6644','#fff'];
-  for(let i=0;i<16;i++){
-    const pt=document.createElement('div');
-    const angle=(i/16)*360;
-    const dist=70+Math.random()*50;
-    const px=Math.cos(angle*Math.PI/180)*dist;
-    const py=Math.sin(angle*Math.PI/180)*dist;
-    pt.style.cssText=`position:absolute;width:8px;height:8px;border-radius:50%;background:${colors[i%colors.length]};
-      --px:${px}px;--py:${py}px;animation:evoParticle .7s ease-out ${i*0.03}s forwards;`;
-    wrap.appendChild(pt);
-  }
-  // 6. Shrink back + show new sprite
-  evoSprite.style.transform='scale(1)';
-  evoSprite.style.filter=`drop-shadow(0 0 16px ${typeColor(evoData.type)}cc)`;
-  await sleep(500);
-  // 7. Show new name
-  evoNew.textContent=evoData.name.toUpperCase();
-  evoArrow.style.transition='opacity .3s'; evoArrow.style.opacity='1';
-  await sleep(200);
-  evoNew.style.transition='opacity .4s,transform .4s'; evoNew.style.opacity='1'; evoNew.style.transform='scale(1.1)';
-  await sleep(200); evoNew.style.transform='scale(1)';
-  if(navigator.vibrate) navigator.vibrate([80,40,80,40,200]);
-  await sleep(1200);
-  // 8. Fade out overlay
-  evoOverlay.style.opacity='0';
-  await sleep(450);
-  evoOverlay.remove();
 
   // Replace pokemon data in team — keep level/xp, update basePower to new form's stats
   const newBase = evoData.power;
   p.id=evoData.id; p.name=evoData.name; p.sprite=evoData.sprite;
-  const evoLv = p.level||1;
-  p.baseAttack=evoData.attack;       p.attack=Math.round(evoData.attack*(1+evoLv*0.1));
-  p.baseSpatk=evoData.spatk||evoData.attack; p.spatk=Math.round((evoData.spatk||evoData.attack)*(1+evoLv*0.1));
-  p.baseDefense=evoData.defense||50; p.defense=Math.round((evoData.defense||50)*(1+evoLv*0.1));
-  p.baseSpdef=evoData.spdef||50;     p.spdef=Math.round((evoData.spdef||50)*(1+evoLv*0.1));
+  p.baseAttack=evoData.attack;  p.attack=Math.round(evoData.attack*(1+(p.level||1)*0.1));
+  p.baseDefense=evoData.defense||50; p.defense=Math.round((evoData.defense||50)*(1+(p.level||1)*0.1));
+  p.baseSpdef=evoData.spdef||50;     p.spdef=Math.round((evoData.spdef||50)*(1+(p.level||1)*0.1));
   p.baseHP=evoData.baseHP||50;
-  p.type=evoData.type;
+  p.spatk=evoData.spatk; p.type=evoData.type;
   p.basePower=newBase; // CRITICAL: update basePower so effectivePower scales correctly
   p.power=Math.round(newBase*(1+(p.level||1)*0.1));
-  p.evolved=true;
-  const evoMaxHP = Math.round((p.baseHP||50)*(1+(p.level||1)*0.15));
-  p.maxHP=evoMaxHP; p.currentHP=evoMaxHP;
+  p.evolved=true; p.currentHP=p.power; p.maxHP=p.power;
 
   // Mark evolved form as caught
   if(!S.caught) S.caught=[];
@@ -2182,6 +2181,129 @@ function dismissStone(){ loseStone(); }
 
 function canEvolveWithStone(p){ return !!p; }
 
+// Show correct buttons for wild state
+function showWildButtons(state){
+  // Hide gym/pvp buttons when wild encounter is active
+  const gymBtn = document.getElementById('main-gym-btn');
+  const pvpBtn = document.getElementById('main-pvp-btn');
+  if(state === 'hide'){
+    if(gymBtn) gymBtn.classList.add('hidden-battle');
+    if(pvpBtn) pvpBtn.classList.add('hidden-battle');
+  } else {
+    if(gymBtn) gymBtn.classList.remove('hidden-battle');
+    if(pvpBtn) pvpBtn.classList.remove('hidden-battle');
+  }
+  const btns = document.getElementById('wild-btns-area');
+  btns.innerHTML = '';
+  if(state==='initial'){
+    // Fight or Flee
+    btns.innerHTML = `
+      <button class="wbtn wbtn-fight" onclick="doFieldBattle()">⚔️ הלחם</button>
+      <button class="wbtn wbtn-flee" onclick="flee()">🏃 ברח</button>`;
+  } else if(state==='won'){
+    const xpPreview = S.wild ? effectivePower(S.wild) : 0;
+    const active = S.team.filter(Boolean).slice(0,6);
+    const fXP = Math.round(xpPreview * 2 / (active.length + 1));
+    // After winning: release for XP or catch with balls
+    btns.innerHTML = `
+      <button class="wbtn wbtn-xp" onclick="releaseForXP()">⭐ שחרר (+${fXP} XP)</button>
+      <button class="wbtn wbtn-pball" onclick="throwBall('poke')">
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#e3350d" stroke="#222" stroke-width="2"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span id="pball-cnt">${S.balls}</span>
+      </button>
+      <button class="wbtn wbtn-gball" onclick="throwBall('great')">
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#2266cc" stroke="#222" stroke-width="2"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span id="gball-cnt">${S.greatBalls}</span>
+      </button>
+      <button class="wbtn wbtn-mball" onclick="throwBall('master')" ${S.masterBalls<=0?'style="opacity:.35"':''}>
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#8822cc" stroke="#222" stroke-width="2"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span id="mball-cnt">${S.masterBalls}</span>
+      </button>`;
+  }
+}
+
+// Field battle - automatic fast combat
+async function doFieldBattle(){
+  if(!S.wild || !S.team.filter(Boolean).length) return;
+  const fighter = S.team.filter(Boolean)[0];
+  const enemy = S.wild;
+  document.getElementById('wild-btns-area').innerHTML = '<div style="color:#f8d030;font-size:13px;font-weight:700;text-align:center;">⚔️ נלחם...</div>';
+  const log = document.getElementById('wild-battle-log');
+  log.style.display='block'; log.innerHTML='';
+  // attack already level-scaled, use defense for damage reduction
+  const pAtkStat = fighter.attack; // already includes level
+  const eAtkStat = enemy.attack;
+  const pTypeMult = (TC[fighter.type]||{})[enemy.type] ?? 1;
+  const eTypeMult = (TC[enemy.type]||{})[fighter.type] ?? 1;
+  const fMaxHP = Math.round((fighter.baseHP||50)*(1+(fighter.level||1)*0.15));
+  const eMaxHP = Math.round((enemy.baseHP||50)*(1+(enemy.level||1)*0.15));
+  let pHP = fMaxHP, eHP = eMaxHP;
+  const lines = [];
+  let rounds = 0;
+  while(pHP>0 && eHP>0 && rounds++<30){
+    const eDef = Math.max(1, enemy.defense||50);
+    const pDmg = Math.max(1, Math.round((pAtkStat/eDef)*80*pTypeMult*(0.85+Math.random()*0.3)));
+    eHP = Math.max(0, eHP-pDmg);
+    const effTxt = pTypeMult>=2?' 🔥 יעיל!':pTypeMult<=0.5?' 🛡 לא יעיל':'';
+    lines.push(`${fighter.name.toUpperCase()} תקף ${pDmg}${effTxt}`);
+    if(eHP<=0) break;
+    const pDef = Math.max(1, fighter.spdef||50);
+    const eDmg = Math.max(1, Math.round((eAtkStat/pDef)*80*eTypeMult*(0.85+Math.random()*0.3)));
+    pHP = Math.max(0, pHP-eDmg);
+    lines.push(`${enemy.name.toUpperCase()} תקף ${eDmg}`);
+  }
+  const won = pHP>0;
+  // Show last 4 lines, fast if few rounds
+  const delay = lines.length <= 2 ? 250 : 400;
+  for(const line of lines.slice(-5)){
+    log.innerHTML += `<div style="opacity:.8;font-size:11px;line-height:1.4;">${line}</div>`;
+    log.scrollTop = log.scrollHeight;
+    await sleep(delay);
+  }
+  if(won){
+    const xpTotal = effectivePower(enemy);
+    log.innerHTML += `<div style="color:#38c878;font-weight:800;margin-top:4px;">✅ ניצחת! (+${xpTotal} XP)</div>`;
+    S.wild.fought=true;
+    await sleep(400);
+    showWildButtons('won');
+  } else {
+    log.innerHTML += `<div style="color:#e3350d;font-weight:800;margin-top:4px;">😔 הפסדת...</div>`;
+    await sleep(800);
+    log.style.display='none';
+    finishEnc();
+  }
+}
+
+// Give XP to active 6, enforce level cap
+function releaseForXP(){
+  if(!S.wild) return;
+  const enemy = S.wild;
+  const cap = maxLvCap();
+  const totalXP = effectivePower(enemy); // XP = effective power of defeated enemy
+  const active = S.team.filter(Boolean).slice(0,6);
+  const fighter = active[0];
+  // Fighter gets 2x share, rest split the remainder
+  const fighterXP = Math.round(totalXP * 2 / (active.length + 1));
+  const othersXP = active.length > 1 ? Math.round((totalXP - fighterXP) / (active.length - 1)) : 0;
+  const levelUps = [];
+  function giveXP(p, xp){
+    p.xp = (p.xp||0) + xp;
+    const newLv = Math.min(levelFromXp(p.xp), cap);
+    if(newLv > (p.level||1)){
+      levelUps.push({name:p.name, newLv});
+      p.level   = newLv;
+      p.power   = Math.round((p.basePower||p.power)*(1+newLv*0.1));
+      p.attack  = Math.round((p.baseAttack||p.attack)*(1+newLv*0.1));
+      p.defense = Math.round((p.baseDefense||p.defense||50)*(1+newLv*0.1));
+      p.spdef   = Math.round((p.baseSpdef||p.spdef||50)*(1+newLv*0.1));
+    }
+  }
+  active.forEach((p,i) => giveXP(p, i===0 ? fighterXP : othersXP));
+  updateTeam(); saveGame();
+  finishEnc();
+  showXPGain(totalXP, fighterXP, othersXP, active.length, levelUps);
+}
+
 
 function showToast(msg, color='#f8d030'){
   document.querySelectorAll('.game-toast').forEach(e=>e.remove());
@@ -2191,6 +2313,68 @@ function showToast(msg, color='#f8d030'){
   t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},1800);
+}
+function showXPGain(total, fighterXP, othersXP, count, levelUps=[]){
+  document.querySelectorAll('.xp-popup').forEach(el=>el.remove());
+  const lvlHtml = levelUps.map(lu=>`<div style="font-size:13px;color:#f8d030;font-weight:800;margin-top:4px;">🆙 ${lu.name.toUpperCase()} → Lv${lu.newLv}!</div>`).join('');
+  const msg = document.createElement('div');
+  msg.className = 'xp-popup';
+  msg.style.cssText='position:fixed;bottom:140px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(10,15,10,.9);border:1.5px solid rgba(248,208,48,.5);border-radius:10px;padding:7px 16px;text-align:center;animation:popIn .2s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;';
+  msg.innerHTML=`<span style="font-size:14px;">⭐</span>
+    <span style="font-size:14px;font-weight:800;color:#f8d030;margin:0 6px;">+${total} XP</span>
+    ${levelUps.length>0 ? `<span style="font-size:13px;color:#f8d030;">${levelUps.map(lu=>`🆙${lu.name.toUpperCase()}→Lv${lu.newLv}`).join(' ')}</span>` : ''}`;
+  document.body.appendChild(msg);
+  // Glow effect on level up
+  if(levelUps.length>0){
+    msg.style.borderColor='#f8d030';
+    msg.style.animation='popIn .25s cubic-bezier(.34,1.56,.64,1), lvlGlow 1s ease .2s';
+  }
+  setTimeout(()=>{ msg.style.opacity='0'; msg.style.transition='opacity .4s'; setTimeout(()=>msg.remove(),400); }, levelUps.length>0 ? 2600 : 1800);
+}
+
+async function throwBall(type='poke'){
+  if(S.catching||!S.wild)return;
+  if(!S.wild.fought){ return; } // must fight first
+  const rates={poke:.6,great:.8,master:1.0};
+  const rate=rates[type]||.6;
+  const ballColors={poke:'🔴',great:'🔵',master:'🟣'};
+  const emoji=ballColors[type];
+  if(type==='poke' && S.balls<=0){ return; }
+  if(type==='great' && S.greatBalls<=0){ return; }
+  if(type==='master' && S.masterBalls<=0){ return; }
+  if(type==='poke')   S.balls--;
+  if(type==='great')  S.greatBalls--;
+  if(type==='master') S.masterBalls--;
+  S.catching=true; updateCounters();
+  if(navigator.vibrate) navigator.vibrate(50);
+  sfx('catch');
+  document.getElementById('wild-wrap').style.display='none';
+  const co=document.getElementById('catch-overlay');co.style.display='flex';
+  const ballFill=type==='great'?'#2266cc':type==='master'?'#8822cc':'#e3350d';
+  const svg=co.querySelector('svg circle');
+  if(svg) svg.setAttribute('fill',ballFill);
+  for(const m of[`${emoji} הכדור נזרק!`,`מתנדנד... ${emoji}`,'3...','2...','1...',]){
+    document.getElementById('catch-msg').textContent=m;await sleep(500);
+  }
+  if(Math.random()<rate){
+    document.getElementById('catch-msg').textContent='✅ נתפס!';
+    doSparkles();await sleep(900);co.style.display='none';
+    handleCaught(S.wild);
+  }else{
+    document.getElementById('catch-msg').textContent='❌ ברח!';await sleep(900);co.style.display='none';finishEnc();
+  }
+  S.catching=false;
+}
+
+// Update wild card buttons to show current counts
+function updateWildBtns(){
+  const pc=document.getElementById('pball-cnt'); if(pc) pc.textContent=S.balls;
+  const gc=document.getElementById('gball-cnt'); if(gc) gc.textContent=S.greatBalls;
+  const mc=document.getElementById('mball-cnt'); if(mc) mc.textContent=S.masterBalls;
+  // Grey out empty balls
+  const pb=document.getElementById('throw-pball'); if(pb) pb.style.opacity=S.balls>0?'1':'.35';
+  const gb=document.getElementById('throw-gball'); if(gb) gb.style.opacity=S.greatBalls>0?'1':'.35';
+  const mb=document.getElementById('throw-mball'); if(mb) mb.style.opacity=S.masterBalls>0?'1':'.35';
 }
 
 function doSparkles(){
@@ -2211,13 +2395,10 @@ function handleCaught(p){
   const cp = {...p, xp:xpForLevel(p.level||1),
     basePower:p.basePower||p.power,
     baseAttack:p.baseAttack||p.attack,
-    baseSpatk:p.baseSpatk||p.spatk||p.attack,
     baseDefense:p.baseDefense||p.defense||50,
     baseSpdef:p.baseSpdef||p.spdef||50,
     baseHP:p.baseHP||50};
   const teamSize = S.team.filter(Boolean).length;
-  if(!S.stats) S.stats={met:0,wonWild:0,lostWild:0,ballsThrown:0,caught:0,fled:0,shinySeen:0};
-  S.stats.caught=(S.stats.caught||0)+1;
   if(teamSize < 6){ S.team.push(cp); updateTeam(); saveGame(); checkAchievements(); finishEnc(); }
   else { S.storage = S.storage||[]; S.storage.push(cp); showToast(`${cp.name.toUpperCase()} נשלח למחשב! 💻`,'#88ccff'); updateStorage(); saveGame(); checkAchievements(); finishEnc(); }
 }
@@ -2235,38 +2416,13 @@ function showSwap(np){
 }
 
 function dismissSwap(){pending=null;document.getElementById('swap-overlay').style.display='none';finishEnc();}
-function flee(){
-  if(S.catching) return;
-  if(!S.stats) S.stats={met:0,wonWild:0,lostWild:0,ballsThrown:0,caught:0,fled:0,shinySeen:0};
-  S.stats.fled=(S.stats.fled||0)+1;
-  S.winStreak=0;
-  finishEnc();
-}
-
-function emergencyReset(e){
-  if(e) e.preventDefault();
-  S.catching=false; S.wild=null;
-  document.getElementById('wild-wrap').style.display='none';
-  document.getElementById('arena').style.pointerEvents='';
-  document.getElementById('catch-overlay').style.display='none';
-  const log=document.getElementById('wild-battle-log');
-  if(log){log.style.display='none';log.innerHTML='';}
-  const btns=document.getElementById('wild-btns-area');
-  if(btns)btns.innerHTML='';
-  document.getElementById('click-hint').textContent='לחץ לגלות פוקימון';
-  document.getElementById('click-hint').style.display='block';
-  S.phase='catch';
-  document.getElementById('arena').onclick=arenaClick;
-  showWildButtons('show');
-  showToast('✅ אופס, אופס — איפוס!','#38c878');
-}
+function flee(){if(S.catching)return;finishEnc();}
 
 function finishEnc(){
   showWildButtons('show'); // always restore gym/pvp buttons
   S.wild=null;
   S.catching=false;
   document.getElementById('wild-wrap').style.display='none';
-  document.getElementById('arena').style.pointerEvents='';
   document.getElementById('catch-overlay').style.display='none';
   const log = document.getElementById('wild-battle-log');
   if(log){ log.style.display='none'; log.innerHTML=''; }
@@ -2275,307 +2431,6 @@ function finishEnc(){
   document.getElementById('click-hint').textContent='לחץ לגלות פוקימון';
   document.getElementById('click-hint').style.display='block';
 }
-
-// ════════════════════════════════════════════════════════
-// WILD ENCOUNTER SYSTEM — rebuilt from scratch
-// ════════════════════════════════════════════════════════
-
-// ── helpers ──────────────────────────────────────────────
-function _wildCard()  { return document.getElementById('wild-card'); }
-function _wildBtns()  { return document.getElementById('wild-btns-area'); }
-function _wildLog()   { return document.getElementById('wild-battle-log'); }
-
-function _makeBtn(label, cls, onClick) {
-  const b = document.createElement('button');
-  b.className = 'wbtn ' + cls;
-  b.innerHTML = label;
-  b.addEventListener('click', onClick);
-  return b;
-}
-
-function _ballSvg(fill) {
-  return '<svg width="16" height="16" viewBox="0 0 60 60">'
-    + '<circle cx="30" cy="30" r="28" fill="' + fill + '" stroke="#222" stroke-width="2"/>'
-    + '<rect x="2" y="27" width="56" height="6" fill="#222"/>'
-    + '<circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/>'
-    + '</svg>';
-}
-
-// ── showWildButtons ───────────────────────────────────────
-function showWildButtons(state){
-  const gymBtn = document.getElementById('main-gym-btn');
-  const pvpBtn = document.getElementById('main-pvp-btn');
-  const hiding = (state==='hide');
-  if(gymBtn) gymBtn.classList.toggle('hidden-battle', hiding);
-  if(pvpBtn) pvpBtn.classList.toggle('hidden-battle', hiding);
-
-  const btns = document.getElementById('wild-btns-area');
-  if(!btns) return;
-  btns.innerHTML = '';
-
-  if(state==='initial'){
-    btns.innerHTML = '<button class="wbtn wbtn-fight" onclick="doFieldBattle()">⚔️ הלחם</button>'
-      + '<button class="wbtn wbtn-flee" onclick="flee()">🏃 ברח</button>';
-
-  } else if(state==='won'){
-    const xp = S.wild ? effectivePower(S.wild) : 0;
-    const act = S.team.filter(Boolean).slice(0,6);
-    const fxp = Math.round(xp*2/(act.length+1));
-
-    const xpBtn = document.createElement('button');
-    xpBtn.className = 'wbtn wbtn-xp';
-    xpBtn.style.width = '100%';
-    xpBtn.textContent = '⭐ שחרר (+' + fxp + ' XP)';
-    xpBtn.onclick = releaseForXP;
-    btns.appendChild(xpBtn);
-
-    function mkBall(cls, fill, type, cntId, count){
-      const b = document.createElement('button');
-      b.className = 'wbtn ' + cls;
-      if(count<=0) b.style.opacity='0.4';
-      b.innerHTML = '<svg width="16" height="16" viewBox="0 0 60 60">'
-        +'<circle cx="30" cy="30" r="28" fill="'+fill+'" stroke="#222" stroke-width="2"/>'
-        +'<rect x="2" y="27" width="56" height="6" fill="#222"/>'
-        +'<circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/>'
-        +'</svg><span id="'+cntId+'">'+count+'</span>';
-      b.onclick = function(){ throwBall(type); };
-      btns.appendChild(b);
-    }
-    mkBall('wbtn-pball','#c8250d','poke',  'cnt-pball', S.balls);
-    mkBall('wbtn-gball','#1a55bb','great', 'cnt-gball', S.greatBalls);
-    mkBall('wbtn-mball','#7711bb','master','cnt-mball', S.masterBalls);
-  }
-}
-
-// ── updateWildBtns ────────────────────────────────────────
-function updateWildBtns() {
-  const pc = document.getElementById('cnt-pball');  if (pc) pc.textContent = S.balls;
-  const gc = document.getElementById('cnt-gball');  if (gc) gc.textContent = S.greatBalls;
-  const mc = document.getElementById('cnt-mball');  if (mc) mc.textContent = S.masterBalls;
-  // dim empty
-  const pBtn = _wildBtns() ? _wildBtns().querySelector('.wbtn-pball') : null;
-  const gBtn = _wildBtns() ? _wildBtns().querySelector('.wbtn-gball') : null;
-  const mBtn = _wildBtns() ? _wildBtns().querySelector('.wbtn-mball') : null;
-  if (pBtn) pBtn.style.opacity = S.balls      > 0 ? '1' : '0.38';
-  if (gBtn) gBtn.style.opacity = S.greatBalls > 0 ? '1' : '0.38';
-  if (mBtn) mBtn.style.opacity = S.masterBalls> 0 ? '1' : '0.38';
-}
-
-// ── doFieldBattle ─────────────────────────────────────────
-async function doFieldBattle() {
-  if (!S.wild || !S.team.filter(Boolean).length) return;
-  const fighter = S.team.filter(Boolean)[0];
-  const enemy   = S.wild;
-
-  // show "fighting..." in btns area
-  const btns = _wildBtns();
-  while (btns.firstChild) btns.removeChild(btns.firstChild);
-  const waitDiv = document.createElement('div');
-  waitDiv.style.cssText = 'color:#f8d030;font-size:13px;font-weight:700;text-align:center;padding:8px;width:100%;';
-  waitDiv.textContent = '⚔️ נלחם...';
-  btns.appendChild(waitDiv);
-
-  const log = _wildLog();
-  log.style.display = 'block';
-  log.innerHTML = '';
-
-  const pAtkStat = fighter.spatk || fighter.attack;
-  const eAtkStat = enemy.spatk   || enemy.attack;
-  const pTypeMult = (TC[fighter.type] || {})[enemy.type] ?? 1;
-  const eTypeMult = (TC[enemy.type]   || {})[fighter.type] ?? 1;
-  const fMaxHP = Math.round((fighter.baseHP || 50) * (1 + (fighter.level || 1) * 0.15));
-  const eMaxHP = Math.round((enemy.baseHP   || 50) * (1 + (enemy.level   || 1) * 0.15));
-  let pHP = fMaxHP, eHP = eMaxHP;
-  const logLines = [];
-  let rounds = 0;
-
-  while (pHP > 0 && eHP > 0 && rounds++ < 30) {
-    const eDefP = Math.max(1, enemy.spdef || 50);
-    const pDmg  = Math.max(1, Math.round((pAtkStat / eDefP) * 80 * pTypeMult * (0.85 + Math.random() * 0.3)));
-    eHP = Math.max(0, eHP - pDmg);
-    const effTxt = pTypeMult >= 2 ? ' 🔥 יעיל!' : pTypeMult <= 0.5 ? ' 🛡 לא יעיל' : '';
-    logLines.push(fighter.name.toUpperCase() + ' תקף ' + pDmg + effTxt);
-    if (eHP <= 0) break;
-    const pDefP = Math.max(1, fighter.spdef || 50);
-    const eDmg  = Math.max(1, Math.round((eAtkStat / pDefP) * 80 * eTypeMult * (0.85 + Math.random() * 0.3)));
-    pHP = Math.max(0, pHP - eDmg);
-    logLines.push(enemy.name.toUpperCase() + ' תקף ' + eDmg);
-  }
-
-  const won = pHP > 0;
-  const delay = logLines.length <= 2 ? 250 : 400;
-  for (const line of logLines.slice(-5)) {
-    log.innerHTML += '<div style="opacity:.8;font-size:11px;line-height:1.4;">' + line + '</div>';
-    log.scrollTop = log.scrollHeight;
-    await sleep(delay);
-  }
-
-  if (!S.stats) S.stats = { met:0, wonWild:0, lostWild:0, ballsThrown:0, caught:0, fled:0, shinySeen:0 };
-
-  if (won) {
-    S.stats.wonWild = (S.stats.wonWild || 0) + 1;
-    S.winStreak = (S.winStreak || 0) + 1;
-    if      (S.winStreak === 15) showToast('🔥 סטריק 15! שיינינ x2!', '#f8d030');
-    else if (S.winStreak === 30) showToast('🔥 סטריק 30! שיינינ 5%!', '#f8d030');
-    else if (S.winStreak === 50) showToast('🔥 סטריק 50! שיינינ 7%!', '#f8d030');
-    const xpTotal = effectivePower(enemy);
-    log.innerHTML += '<div style="color:#38c878;font-weight:800;margin-top:4px;">✅ ניצחת! (+' + xpTotal + ' XP)</div>';
-    S.wild.fought = true;
-    await sleep(400);
-    showWildButtons('won');
-  } else {
-    S.stats.lostWild = (S.stats.lostWild || 0) + 1;
-    S.winStreak = 0;
-    log.innerHTML += '<div style="color:#e3350d;font-weight:800;margin-top:4px;">😔 הפסדת...</div>';
-    await sleep(800);
-    log.style.display = 'none';
-    finishEnc();
-  }
-}
-
-// ── releaseForXP ──────────────────────────────────────────
-function releaseForXP() {
-  if (!S.wild) return;
-  const enemy = S.wild;
-  const cap   = maxLvCap();
-  const totalXP = effectivePower(enemy);
-  const active  = S.team.filter(Boolean).slice(0, 6);
-  const fighterXP = Math.round(totalXP * 2 / (active.length + 1));
-  const othersXP  = active.length > 1
-    ? Math.round((totalXP - fighterXP) / (active.length - 1))
-    : 0;
-  const levelUps = [];
-
-  function giveXP(p, xp) {
-    p.xp = (p.xp || 0) + xp;
-    const newLv = Math.min(levelFromXp(p.xp), cap);
-    if (newLv > (p.level || 1)) {
-      levelUps.push({ name: p.name, newLv });
-      p.level   = newLv;
-      p.power   = Math.round((p.basePower   || p.power)            * (1 + newLv * 0.1));
-      p.attack  = Math.round((p.baseAttack  || p.attack)           * (1 + newLv * 0.1));
-      p.spatk   = Math.round((p.baseSpatk   || p.spatk || p.attack)* (1 + newLv * 0.1));
-      p.defense = Math.round((p.baseDefense || p.defense || 50)    * (1 + newLv * 0.1));
-      p.spdef   = Math.round((p.baseSpdef   || p.spdef  || 50)     * (1 + newLv * 0.1));
-    }
-  }
-
-  active.forEach(function(p, i) { giveXP(p, i === 0 ? fighterXP : othersXP); });
-  updateTeam();
-  saveGame();
-  finishEnc();
-  showXPGain(totalXP, fighterXP, othersXP, active.length, levelUps);
-}
-
-// ── showXPGain ────────────────────────────────────────────
-function showXPGain(total, fighterXP, othersXP, count, levelUps) {
-  levelUps = levelUps || [];
-  document.querySelectorAll('.xp-popup').forEach(function(el) { el.remove(); });
-  const hasLvl = levelUps.length > 0;
-  const msg = document.createElement('div');
-  msg.className = 'xp-popup';
-  msg.style.cssText = 'position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:300;'
-    + 'background:linear-gradient(135deg,rgba(10,20,10,.95),rgba(5,15,5,.95));'
-    + 'border:1.5px solid ' + (hasLvl ? '#f8d030' : 'rgba(248,208,48,.4)') + ';border-radius:14px;'
-    + 'padding:10px 20px;text-align:center;animation:popIn .3s cubic-bezier(.34,1.56,.64,1);'
-    + 'pointer-events:none;white-space:nowrap;'
-    + (hasLvl ? 'box-shadow:0 0 20px rgba(248,208,48,.4),0 4px 20px rgba(0,0,0,.5);' : 'box-shadow:0 4px 16px rgba(0,0,0,.4);');
-
-  const lvlItems = levelUps.map(function(lu) {
-    return '<div style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.12);'
-      + 'border-radius:8px;padding:2px 10px;">\uD83C\uDD86 ' + lu.name.toUpperCase() + ' Lv' + lu.newLv + '!</div>';
-  }).join('');
-  const lvlBlock = hasLvl
-    ? '<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px;">' + lvlItems + '</div>'
-    : '';
-
-  msg.innerHTML = '<div style="display:flex;align-items:center;gap:8px;justify-content:center;">'
-    + '<span style="font-size:18px;">' + (hasLvl ? '\uD83C\uDF1F' : '\u2B50') + '</span>'
-    + '<span style="font-size:16px;font-weight:900;color:#f8d030;">+' + total + ' XP</span></div>'
-    + lvlBlock;
-
-  document.body.appendChild(msg);
-
-  if (hasLvl) {
-    for (let i = 0; i < 6; i++) {
-      const star  = document.createElement('div');
-      const angle = (i / 6) * 360;
-      const dist  = 60 + Math.random() * 40;
-      const dx    = Math.cos(angle * Math.PI / 180) * dist;
-      const dy    = Math.sin(angle * Math.PI / 180) * dist;
-      star.style.cssText = 'position:fixed;bottom:170px;left:50%;z-index:299;font-size:14px;pointer-events:none;'
-        + 'animation:starShoot' + i + ' .7s ease-out ' + (i * 0.07) + 's forwards;opacity:0;';
-      star.textContent = '★';
-      const style = document.createElement('style');
-      style.textContent = '@keyframes starShoot' + i + '{0%{opacity:1;transform:translate(0,0) scale(1)}'
-        + '100%{opacity:0;transform:translate(' + dx + 'px,' + (-Math.abs(dy)) + 'px) scale(0);}}';
-      document.head.appendChild(style);
-      document.body.appendChild(star);
-      setTimeout(function() { star.remove(); style.remove(); }, 900);
-    }
-    triggerMapConfetti();
-  }
-  setTimeout(function() {
-    msg.style.opacity = '0';
-    msg.style.transition = 'opacity .5s';
-    setTimeout(function() { msg.remove(); }, 500);
-  }, hasLvl ? 3000 : 1800);
-}
-
-// ── throwBall ─────────────────────────────────────────────
-async function throwBall(type) {
-  type = type || 'poke';
-  if (!S.stats) S.stats = { met:0, wonWild:0, lostWild:0, ballsThrown:0, caught:0, fled:0, shinySeen:0 };
-  S.stats.ballsThrown = (S.stats.ballsThrown || 0) + 1;
-  if (S.catching || !S.wild) return;
-  if (!S.wild.fought) return; // must fight first
-
-  const rates = { poke: 0.6, great: 0.8, master: 1.0 };
-  const rate  = rates[type] || 0.6;
-  const emoji = { poke: '🔴', great: '🔵', master: '🟣' }[type] || '🔴';
-
-  if (type === 'poke'   && S.balls       <= 0) return;
-  if (type === 'great'  && S.greatBalls  <= 0) return;
-  if (type === 'master' && S.masterBalls <= 0) return;
-
-  if (type === 'poke')   S.balls--;
-  if (type === 'great')  S.greatBalls--;
-  if (type === 'master') S.masterBalls--;
-
-  S.catching = true;
-  updateCounters();
-  if (navigator.vibrate) navigator.vibrate(50);
-  sfx('catch');
-
-  document.getElementById('wild-wrap').style.display = 'none';
-  document.getElementById('arena').style.pointerEvents='';
-  const co = document.getElementById('catch-overlay');
-  co.style.display = 'flex';
-  const ballFill = type === 'great' ? '#2266cc' : type === 'master' ? '#8822cc' : '#e3350d';
-  const svgCircle = co.querySelector('svg circle');
-  if (svgCircle) svgCircle.setAttribute('fill', ballFill);
-
-  for (const m of [emoji + ' הכדור נזרק!', 'מתנדנד... ' + emoji, '3...', '2...', '1...']) {
-    document.getElementById('catch-msg').textContent = m;
-    await sleep(500);
-  }
-
-  if (Math.random() < rate) {
-    document.getElementById('catch-msg').textContent = '✅ נתפס!';
-    doSparkles();
-    await sleep(900);
-    co.style.display = 'none';
-    handleCaught(S.wild);
-  } else {
-    document.getElementById('catch-msg').textContent = '❌ ברח!';
-    await sleep(900);
-    co.style.display = 'none';
-    finishEnc();
-  }
-  S.catching = false;
-}
-// ════════════════════════════════════════════════════════
-
 
 // ═══════════════ SCORE ═══════════════
 let score = 0;
@@ -2668,11 +2523,10 @@ function confirmLineupSelect(){
 }
 
 async function triggerGym(){
-  if(S.gym >= 8){ startEliteFour(); return; }
   S.phase='gym';
   document.getElementById('arena').onclick=null;
   document.getElementById('click-hint').style.display='none';
-  // team panel removed
+  document.getElementById('team-panel').classList.remove('open'); // close drawer
   const g=GYMS[S.gym];
   S.enemies=await fetchGym(S.gym);
 
@@ -2793,13 +2647,7 @@ async function runBattleLoop(){
     // fight until one faints
     const result = await fight1v1(pp, ep);
 
-    if(result==='switch'){
-      // שחקן החליף פוקימון — requestBattleSwitch כבר שם את הנבחר ב-playerIdx+1
-      // מקדמים playerIdx כדי שהקרב הבא יהיה עם הפוקימון שנבחר
-      bs.playerIdx++;
-      document.getElementById('battle-log-txt').textContent=`🔄 ${bs.playerOrder[bs.playerIdx]?.name?.toUpperCase()||'?'} נכנס לקרב!`;
-      await sleep(700);
-    } else if(result==='player'){
+    if(result==='player'){
       // player won this matchup
       bs.playerWins++;
       bs.enemyIdx++;
@@ -2886,9 +2734,7 @@ function playerChooseMove(pp, ep){
   });
 }
 
-let _lastMoveWasSwitch = false;
 async function fight1v1(pp, ep){
-  _lastMoveWasSwitch = false;
   updateBattleUI(pp, ep, battleState);
   let safety=0;
   while(pp.currentHP>0 && ep.currentHP>0 && safety++<40){
@@ -2897,24 +2743,20 @@ async function fight1v1(pp, ep){
     const {mult:chosenMult, isSwitch} = moveResult;
     if(isSwitch){
       // Switch costs turn: enemy attacks immediately, then new pokemon comes in
-      const bs = battleState; // fix: use global battleState
-      const switchDef = Math.max(1, pp.defense||50);
+      const switchDef = Math.max(1, pp.spdef||50);
       const eDmg2 = Math.max(1, Math.round((ep.attack/switchDef)*80*(0.85+Math.random()*0.3)));
+      // The NEW pokemon takes the hit
       const nextPp = bs.playerOrder[bs.playerIdx+1];
       if(nextPp){
         nextPp.currentHP = Math.max(0, (nextPp.currentHP||nextPp.power) - eDmg2);
         document.getElementById('battle-log-txt').textContent=`🔄 החלפה! ${ep.name.toUpperCase()} תקף ${eDmg2}`;
       }
-      _lastMoveWasSwitch = true;
       await sleep(800);
-      break;
+      break; // end this 1v1, runBattleLoop will pick next pokemon
     } else {
       // ATK vs DEF — no double-scaling, attack already includes level
-      // רגילה: attack vs defense | type: spatk vs spdef
-      const isTypeMove = moveResult.isType || false;
-      const ppAtk = isTypeMove ? (pp.spatk||pp.attack) : pp.attack;
-      const pDef  = Math.max(1, isTypeMove ? (ep.spdef||50) : (ep.defense||50));
-      const pDmg  = Math.max(1, Math.round((ppAtk / pDef) * 80 * chosenMult * (0.85+Math.random()*0.3)));
+      const pDef = Math.max(1, ep.defense||50);
+      const pDmg = Math.max(1, Math.round((pp.attack / pDef) * 80 * chosenMult * (0.85+Math.random()*0.3)));
       ep.currentHP = Math.max(0, ep.currentHP - pDmg);
       updateHPBar('enemy', ep.currentHP, ep.maxHP);
       flashHit('b-enemy-sprite');
@@ -2930,10 +2772,8 @@ async function fight1v1(pp, ep){
     const eType  = (TC[ep.type]||{})[pp.type] ?? 1;
     const eMult  = eType>=1 ? eType : eNorm;
     // enemy uses spatk vs player spdef
-    // אויב: type=spatk vs spdef | רגילה=attack vs defense
-    const epAtk = eMult>1 ? (ep.spatk||ep.attack) : ep.attack;
-    const eDef  = Math.max(1, eMult>1 ? (pp.spdef||50) : (pp.defense||50));
-    const eDmg  = Math.max(1, Math.round((epAtk / eDef) * 80 * eMult * (0.85+Math.random()*0.3)));
+    const eDef = Math.max(1, pp.spdef||50);
+    const eDmg = Math.max(1, Math.round((ep.attack / eDef) * 80 * eMult * (0.85+Math.random()*0.3)));
     pp.currentHP = Math.max(0, pp.currentHP - eDmg);
     updateHPBar('player', pp.currentHP, pp.maxHP);
     flashHit('b-player-sprite');
@@ -2942,7 +2782,6 @@ async function fight1v1(pp, ep){
     await sleep(800);
   }
   document.getElementById('move-btns').style.display='none';
-  if(_lastMoveWasSwitch){ _lastMoveWasSwitch=false; return 'switch'; }
   return pp.currentHP>0 ? 'player' : 'enemy';
 }
 
@@ -2973,8 +2812,8 @@ function updateBattleUI(pp, ep, bs){
   document.getElementById('b-enemy-sprite').src  = ep.sprite;
   document.getElementById('b-player-name').textContent = pp.name.toUpperCase()+' Lv'+(pp.level||1);
   document.getElementById('b-enemy-name').textContent  = ep.name.toUpperCase()+' Lv'+(ep.level||1);
-  document.getElementById('b-player-type').innerHTML = `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${typeColor(pp.type)};color:#fff">${pp.type}</span><span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:6px;">⚔️${pp.attack} ✨${pp.spatk||'?'} 🛡️${pp.defense||'?'} 💠${pp.spdef||'?'}</span>`;
-  document.getElementById('b-enemy-type').innerHTML  = `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${typeColor(ep.type)};color:#fff">${ep.type}</span><span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:6px;">⚔️${ep.attack} ✨${ep.spatk||'?'} 🛡️${ep.defense||'?'} 💠${ep.spdef||'?'}</span>`;
+  document.getElementById('b-player-type').innerHTML = `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${typeColor(pp.type)};color:#fff">${pp.type}</span><span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:6px;">⚔️${pp.attack} 🛡️${pp.defense||'?'}</span>`;
+  document.getElementById('b-enemy-type').innerHTML  = `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${typeColor(ep.type)};color:#fff">${ep.type}</span><span style="font-size:10px;color:rgba(255,255,255,.5);margin-left:6px;">⚔️${ep.attack} 🛡️${ep.defense||'?'}</span>`;
   updateHPBar('player', pp.currentHP, pp.maxHP);
   updateHPBar('enemy',  ep.currentHP, ep.maxHP);
   document.getElementById('battle-score-display').textContent=`${bs.playerWins} — ${bs.enemyWins}`;
@@ -3026,6 +2865,7 @@ async function showSwitchPanel(bs){
       const hpPct = Math.round((p.currentHP/p.maxHP)*100);
       card.innerHTML=`<img src="${p.sprite}"><div class="sw-n">${p.name.substring(0,8).toUpperCase()}</div><div class="sw-hp" style="color:${hpPct>50?'#38c878':hpPct>20?'#f8d030':'#e3350d'}">HP ${p.currentHP}</div>`;
       card.onclick=()=>{
+        // Swap chosen to front of remaining slice
         const globalIdx = bs.playerIdx + i;
         if(globalIdx !== bs.playerIdx){
           const chosen = bs.playerOrder.splice(globalIdx,1)[0];
@@ -3041,124 +2881,20 @@ async function showSwitchPanel(bs){
 }
 
 
-
-// ════════════════════════════════════════
-// ELITE FOUR SYSTEM
-// ════════════════════════════════════════
-let _eliteIdx = 0; // 0-3 = elite four, 4 = champion
-
-async function startEliteFour(){
-  _eliteIdx = S.eliteProgress || 0;
-  document.getElementById('gym-overlay').style.display='none';
-  showEliteFourIntro();
-}
-
-function showEliteFourIntro(){
-  const e = ELITE_FOUR[_eliteIdx];
-  const existing = document.getElementById('elite-overlay');
-  if(existing) existing.remove();
-  const ov = document.createElement('div');
-  ov.id = 'elite-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#05000f,#0a0018);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;';
-  const progressHtml = _eliteIdx>0 ? '<div style="font-size:11px;color:#38c878;margin-bottom:16px;">'+_eliteIdx+'/4 אליטים הובסו ✅</div>' : '';
-  const backBtn = e.isChampion ? '' : '<button onclick="document.getElementById(&quot;elite-overlay&quot;).remove();continueJourney();" style="font-family:Outfit,sans-serif;font-size:13px;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">🏃 חזור לאימון</button>';
-  const titleStr = e.isChampion ? 'האלוף הראשי' : 'ליגת האליטה ' + (_eliteIdx+1) + '/4';
-  ov.innerHTML = '<div style="text-align:center;max-width:320px;">'
-    + '<div style="font-size:60px;margin-bottom:12px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);">'+e.icon+'</div>'
-    + '<div style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:3px;margin-bottom:4px;">'+titleStr+'</div>'
-    + '<div style="font-size:26px;font-weight:900;color:#f8d030;margin-bottom:4px;">'+e.leader+'</div>'
-    + '<div style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:24px;">מתמחה ב-'+e.type+' · רמה '+e.maxLv+'</div>'
-    + progressHtml
-    + '<div style="display:flex;flex-direction:column;gap:10px;">'
-    + '<button onclick="fightElite()" style="font-family:Outfit,sans-serif;font-size:15px;font-weight:800;padding:14px;border:2px solid #e3350d;border-radius:14px;background:rgba(227,53,13,.15);color:#ff6644;cursor:pointer;">⚔️ הלחם!</button>'
-    + backBtn
-    + '</div></div>';
-  document.body.appendChild(ov);
-}
-
-async function fightElite(){
-  document.getElementById('elite-overlay')?.remove();
-  const e = ELITE_FOUR[_eliteIdx];
-  // build elite team
-  S.enemies = await fetchEliteTeam(e);
-  S.gym = 8; // keep at 8 for level cap purposes
-  // reuse gym battle system
-  const gymOverlay = document.getElementById('gym-overlay');
-  gymOverlay.style.display='flex';
-  document.getElementById('gym-title').textContent = `${e.icon} ${e.leader}`;
-  document.getElementById('gym-subtitle').textContent = e.isChampion ? '👑 האלוף הראשי' : `ליגת האליטה ${_eliteIdx+1}/4`;
-  // Override result handler
-  window._eliteBattleMode = true;
-  await startBattle();
-}
-
-async function fetchEliteTeam(e){
-  const byType = {
-    ice:[87,91,124,131,144,215,225,238,361,362,363,378,471,473,478],
-    fighting:[56,57,62,66,67,68,106,107,214,237,286,297,307,308,448],
-    ghost:[92,93,94,200,292,302,354,355,442,477,479,487,488,429],
-    dragon:[147,148,149,230,329,330,334,371,372,373,374,375,376,384,443,444,445],
-    normal:[143,232,241,289,242,234,203,206,216,217,300,301,285,286],
-  };
-  const ids = [...(byType[e.type]||byType.normal)].sort(()=>Math.random()-.5).slice(0,6);
-  const lv = e.maxLv;
-  const team = [];
-  for(const id of ids){
-    const p = await fetchP(id);
-    if(p){
-      const powerCap = e.avg * 3;
-      const clampedBase = Math.min(p.basePower||p.power, powerCap);
-      const baseAtk = p.baseAttack||p.attack;
-      const baseSpa = p.baseSpatk||p.spatk||p.attack;
-      const baseDef = p.baseDefense||p.defense||50;
-      const baseSpd = p.baseSpdef||p.spdef||50;
-      const baseHp  = p.baseHP||50;
-      team.push({...p, level:lv, xp:0, basePower:clampedBase,
-        baseAttack:baseAtk, baseSpatk:baseSpa, baseDefense:baseDef, baseSpdef:baseSpd,
-        power:Math.round(clampedBase*(1+lv*0.1)),
-        attack:Math.round(baseAtk*(1+lv*0.1)),
-        spatk:Math.round(baseSpa*(1+lv*0.1)),
-        defense:Math.round(baseDef*(1+lv*0.1)),
-        spdef:Math.round(baseSpd*(1+lv*0.1)),
-        maxHP:Math.round(baseHp*(1+lv*0.15)),
-        currentHP:Math.round(baseHp*(1+lv*0.15))});
-    }
-  }
-  return team;
-}
-
-function eliteWin(){
-  S.eliteProgress = (_eliteIdx + 1);
-  saveGame();
-  _eliteIdx++;
-  if(_eliteIdx >= ELITE_FOUR.length){
-    // Beat champion!
-    S.eliteProgress = 0;
-    window._eliteBattleMode = false;
-    showVictory();
-  } else {
-    window._eliteBattleMode = false;
-    document.getElementById('gym-overlay').style.display='none';
-    showEliteFourIntro();
-  }
-}
-
-function eliteLose(){
-  window._eliteBattleMode = false;
-  S.eliteProgress = 0; // חוזרים להתחלת Elite Four בלבד
-  _eliteIdx = 0;
-  saveGame();
-  document.getElementById('gym-overlay').style.display='none';
-  showToast('הובסת! חזור ל-Elite Four מההתחלה 💪','#e3350d');
-  // חזור למפה — S.gym נשאר 8, שחקן יכול ללחץ שוב על הכפתור
-  S.phase='catch';
-  document.getElementById('arena').onclick=arenaClick;
-  document.getElementById('click-hint').textContent='לחץ לגלות פוקימון';
-  document.getElementById('click-hint').style.display='block';
-  updateCounters(); updateGymBar();
-}
-
 // ═══ REWARD SCREEN after gym win ═══
+
+const ELITE_FOUR = [
+  {name:'לורלי',    type:'ice',     lv:52, icon:'🧊', color:'#88ccff',
+   pokes:[87,91,124,131,144]},
+  {name:'בּרוּנוֹ',    type:'fighting', lv:54, icon:'🥊', color:'#ff8844',
+   pokes:[66,107,106,237,68]},
+  {name:'אגתה',    type:'ghost',   lv:56, icon:'👻', color:'#aa88ff',
+   pokes:[92,110,93,94,42]},
+  {name:'לאנס',    type:'dragon',  lv:60, icon:'🐉', color:'#ff4444',
+   pokes:[148,6,130,149,149]},
+  {name:'אמיתי',   type:'normal',  lv:65, icon:'🏆', color:'#f8d030',
+   pokes:[149,130,6,131,143]},
+];
 const GYM_REWARDS = [
   {balls:6, great:2, master:0},  // gym 0 → next round
   {balls:6, great:3, master:0},
@@ -3220,7 +2956,6 @@ function showBattleResult(won, bs, g){
   document.getElementById('phase-battle').style.display='none';
   document.getElementById('phase-result').style.display='block';
   if(won){
-    if(window._eliteBattleMode){ eliteWin(); return; }
     S.badges++; updateBadges();
     addScore(50 + (8-S.gym)*10);
     // Push leaderboard update
@@ -3236,7 +2971,6 @@ function showBattleResult(won, bs, g){
     if(S.badges===1 && !S.gotMasterBall){ S.masterBalls=1; S.gotMasterBall=true; }
     showRewardScreen(g);
   } else {
-    if(window._eliteBattleMode){ eliteLose(); return; }
     document.getElementById('result-icon').innerHTML='<div style="font-size:64px;">😔</div>';
     document.getElementById('result-title').textContent='הפסדת...';
     document.getElementById('result-title').style.color='#e3350d';
@@ -3262,7 +2996,8 @@ function showMap(){
   document.getElementById('gym-overlay').style.display='none';
   S.gym++;
   if(S.gym>=8){
-    // Start Elite Four instead of direct victory
+    // After 8 badges → Elite Four
+    if(!S.eliteIdx) S.eliteIdx=0;
     startEliteFour();
     return;
   }
@@ -3467,156 +3202,6 @@ let _dexSortMode = 'id'; // 'power' or 'id'
 let _dexCaughtOnly = false;
 let _dexEntries = [];
 
-
-// ════════════════════════════════════════
-// POKEMON DETAIL SCREEN
-// ════════════════════════════════════════
-async function openPokeDetail(p, mode, extraData){
-  // extraData: {teamIdx, storageIdx, teamSize} for action buttons
-  const existing = document.getElementById('poke-detail-overlay');
-  if(existing) existing.remove();
-
-  const lv = p.level||1;
-  // Scaled stats
-  const atk  = p.attack  || Math.round((p.baseAttack||50)*(1+lv*0.1));
-  const spa   = p.spatk   || Math.round((p.baseSpatk||50)*(1+lv*0.1));
-  const def   = p.defense || Math.round((p.baseDefense||50)*(1+lv*0.1));
-  const spd   = p.spdef   || Math.round((p.baseSpdef||50)*(1+lv*0.1));
-  const maxHp = Math.round((p.baseHP||50)*(1+lv*0.15));
-
-  // Stat bars — max reference 500
-  const statBar = (val, color, max=500)=>{
-    const pct = Math.min(100, Math.round(val/max*100));
-    return `<div style="flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px;"></div></div>`;
-  };
-
-  const stats = [
-    {label:'❤️ HP',      val:maxHp, color:'#e74c3c'},
-    {label:'⚔️ Attack',  val:atk,   color:'#e67e22'},
-    {label:'✨ Sp.Atk',  val:spa,   color:'#9b59b6'},
-    {label:'🛡️ Defense', val:def,   color:'#3498db'},
-    {label:'💠 Sp.Def',  val:spd,   color:'#1abc9c'},
-  ];
-  const statsHtml = stats.map(s=>`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
-      <span style="font-size:11px;color:rgba(255,255,255,.55);width:72px;text-align:right;flex-shrink:0;">${s.label}</span>
-      ${statBar(s.val, s.color)}
-      <span style="font-size:12px;font-weight:800;color:#fff;width:36px;text-align:left;">${s.val}</span>
-    </div>`).join('');
-
-  // Evolution chain
-  let evoHtml = '';
-  try {
-    const evoChain = await fetchEvoChain(p.id);
-    if(evoChain && evoChain.length > 1){
-      evoHtml = `<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);">
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;text-align:center;">שרשרת התפתחות</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">
-          ${evoChain.map((e,i)=>`
-            ${i>0?'<span style="color:rgba(255,255,255,.3);font-size:16px;">→</span>':''}
-            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;${e.id===p.id?'background:rgba(248,208,48,.1);border:1px solid rgba(248,208,48,.3);border-radius:8px;padding:4px 6px;':'padding:4px 6px;'}">
-              <img src="${e.sprite}" style="width:36px;height:36px;image-rendering:pixelated;${e.id===p.id?'':'opacity:.7;'}">
-              <span style="font-size:8px;color:${e.id===p.id?'#f8d030':'rgba(255,255,255,.45)'};font-weight:${e.id===p.id?800:400};">${e.name.toUpperCase()}</span>
-            </div>`).join('')}
-        </div>
-      </div>`;
-    }
-  } catch(e){}
-
-  // Action buttons
-  let actionsHtml = '';
-  if(mode==='team'){
-    const {teamIdx, teamSize} = extraData||{};
-    const canSend = teamSize > 1;
-    const isFirst = teamIdx === 0;
-    const promoteBtn = !isFirst
-      ? `<button onclick="promoteToFirst(${teamIdx});document.getElementById('poke-detail-overlay').remove();renderHofPanel();" style="${_btnStyle('#f8d030')}">1️⃣ קדם לראשון</button>`
-      : '';
-    actionsHtml = (canSend
-      ? `<button onclick="teamPokeToPC(${teamIdx});document.getElementById('poke-detail-overlay').remove();renderHofPanel();" style="${_btnStyle('#88ccff')}">💻 שלח למחשב</button>`
-      : `<div style="font-size:11px;color:#e3350d;padding:8px;background:rgba(227,53,13,.1);border-radius:8px;text-align:center;margin-bottom:6px;">חייב להישאר לפחות פוקימון אחד</div>`)
-      + promoteBtn;
-  } else if(mode==='pc'){
-    const {storageIdx, canAdd} = extraData||{};
-    actionsHtml = canAdd
-      ? `<button onclick="pcToTeam(${storageIdx});document.getElementById('poke-detail-overlay').remove();" style="${_btnStyle('#38c878')}">← העבר לצוות</button>`
-      : `<div style="font-size:11px;color:#e3350d;padding:8px;background:rgba(227,53,13,.1);border-radius:8px;text-align:center;margin-bottom:6px;">הצוות מלא (6/6)</div>`;
-  }
-
-  const shinyBadge = p.shiny ? '<span style="font-size:11px;background:rgba(248,208,48,.2);border:1px solid rgba(248,208,48,.4);color:#f8d030;padding:2px 8px;border-radius:20px;font-weight:800;">✨ SHINY</span>' : '';
-
-  const ov = document.createElement('div');
-  ov.id = 'poke-detail-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:16px;';
-  ov.onclick = e=>{ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = `
-    <div style="background:linear-gradient(160deg,#080f14,#0d1a10);border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:22px 20px;width:100%;max-width:320px;max-height:90vh;overflow-y:auto;position:relative;animation:fadeInScale .25s cubic-bezier(.34,1.3,.64,1);">
-      <button onclick="document.getElementById('poke-detail-overlay').remove()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:50%;width:28px;height:28px;color:rgba(255,255,255,.8);font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
-
-      <!-- Header -->
-      <div style="text-align:center;margin-bottom:16px;">
-        <div style="font-size:9px;color:#555;margin-bottom:2px;">#${p.id}</div>
-        <img src="${p.sprite}" style="width:88px;height:88px;image-rendering:pixelated;filter:drop-shadow(0 0 14px ${typeColor(p.type)}66);">
-        <div style="font-size:19px;font-weight:900;color:#fff;margin:6px 0 4px;">${p.name.toUpperCase()}</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:11px;padding:2px 10px;border-radius:20px;background:${typeColor(p.type)};color:#fff;font-weight:700;">${p.type}</span>
-          <span style="font-size:11px;color:rgba(255,255,255,.5);">Lv${lv}</span>
-          <span style="font-size:11px;color:#f8d030;font-weight:800;">⚡ ${effectivePower(p)}</span>
-          ${shinyBadge}
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div style="margin-bottom:4px;">${statsHtml}</div>
-
-      <!-- Evolution chain -->
-      ${evoHtml}
-
-      <!-- Actions -->
-      <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
-        ${actionsHtml}
-        <button onclick="document.getElementById('poke-detail-overlay').remove()" style="${_btnStyle('rgba(255,255,255,.3)')}">סגור</button>
-      </div>
-    </div>`;
-  document.body.appendChild(ov);
-}
-
-function promoteToFirst(teamIdx){
-  const arr = S.team.filter(Boolean);
-  if(teamIdx===0 || teamIdx>=arr.length) return;
-  const p = arr.splice(teamIdx,1)[0];
-  arr.unshift(p);
-  S.team = arr;
-  updateTeam(); renderHofPanel(); saveGame();
-  showToast(`${p.name.toUpperCase()} עכשיו ראשון!`,'#f8d030');
-}
-
-function _btnStyle(color){
-  const isClose = color === 'rgba(255,255,255,.3)';
-  return `width:100%;font-family:Outfit,sans-serif;font-size:14px;font-weight:800;padding:12px;border:2px solid ${isClose?'rgba(255,255,255,.25)':color};border-radius:12px;background:${isClose?'rgba(255,255,255,.08)':color+'22'};color:${isClose?'rgba(255,255,255,.7)':color};cursor:pointer;`;
-}
-
-async function fetchEvoChain(pokemonId){
-  try {
-    const specRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
-    if(!specRes.ok) return null;
-    const spec = await specRes.json();
-    const chainRes = await fetch(spec.evolution_chain.url);
-    if(!chainRes.ok) return null;
-    const chainData = await chainRes.json();
-    // Flatten chain
-    const chain = [];
-    const walk = async (node)=>{
-      const id = parseInt(node.species.url.split('/').filter(Boolean).pop());
-      const p = await fetchP(id);
-      if(p) chain.push(p);
-      for(const next of (node.evolves_to||[])) await walk(next);
-    };
-    await walk(chainData.chain);
-    return chain;
-  } catch(e){ return null; }
-}
-
 async function openPokedex(){
   const overlay = document.getElementById('pokedex-overlay');
   overlay.style.display='block';
@@ -3659,8 +3244,6 @@ function renderPokedex(){
     card.style.cssText='background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 4px;text-align:center;';
     const isCaught = (S.caught||[]).includes(p.id);
     card.style.cssText += isCaught ? 'border-color:rgba(56,200,120,.35);' : '';
-    card.style.cursor = 'pointer';
-    card.onclick = ()=> openPokeDetail(p, 'dex', {});
     card.innerHTML=`
       <div style="position:relative;display:inline-block;">
         <div style="font-size:8px;color:#555;">#${p.id}</div>
@@ -3700,8 +3283,6 @@ function doContinue(){
     // Retroactive fix: recalculate scaled stats from base values
     const correctAtk = Math.round(p.baseAttack*(1+lv*0.1));
     if(p.attack < p.baseAttack) p.attack = correctAtk;
-    if(!p.baseSpatk) p.baseSpatk = p.spatk;
-    p.spatk   = Math.round(p.baseSpatk*(1+lv*0.1));
     p.defense = Math.round(p.baseDefense*(1+lv*0.1));
     p.spdef   = Math.round(p.baseSpdef*(1+lv*0.1));
     p.power   = Math.round(p.basePower*(1+lv*0.1));
@@ -3712,7 +3293,6 @@ function doContinue(){
   };
   S.team.forEach(fixP);
   (S.storage||[]).forEach(fixP);
-  if(!S.stats) S.stats={met:0,wonWild:0,lostWild:0,ballsThrown:0,caught:0,fled:0,shinySeen:0};
   if(!S.greatBalls) S.greatBalls=2;
   if(!S.masterBalls) S.masterBalls=0;
   if(S.gotMasterBall===undefined) S.gotMasterBall=false;
@@ -3777,13 +3357,46 @@ function pcPokeOptions(idx, p){
   const teamCount = S.team.filter(Boolean).length;
   const canAdd = teamCount < 6;
   // Build inline popup
-  document.getElementById('pc-popup')?.remove();
-  openPokeDetail(p, 'pc', {storageIdx:idx, canAdd});
+  const existing = document.getElementById('pc-popup');
+  if(existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id='pc-popup';
+  popup.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;';
+  popup.innerHTML=`
+    <div style="background:linear-gradient(160deg,#05101e,#0a1828);border:2px solid rgba(100,180,255,.3);border-radius:18px;padding:24px;max-width:280px;width:90%;text-align:center;">
+      <img src="${p.sprite}" style="width:72px;height:72px;image-rendering:pixelated;filter:drop-shadow(0 0 12px rgba(100,180,255,.4));">
+      <div style="font-size:16px;font-weight:800;color:#fff;margin:8px 0 2px;">${p.name.toUpperCase()}</div>
+      <div style="font-size:12px;color:#88ccff;margin-bottom:16px;">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
+      ${canAdd
+        ? `<button onclick="pcToTeam(${idx})" style="width:100%;font-family:Outfit,sans-serif;font-size:14px;font-weight:800;padding:12px;border:2px solid #38c878;border-radius:12px;background:rgba(56,200,120,.12);color:#38c878;cursor:pointer;margin-bottom:8px;">← העבר לצוות</button>`
+        : `<div style="font-size:12px;color:#e3350d;margin-bottom:12px;">הצוות מלא (6/6)</div>`
+      }
+      <button onclick="document.getElementById('pc-popup').remove()" style="width:100%;font-family:Outfit,sans-serif;font-size:13px;padding:10px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">ביטול</button>
+    </div>`;
+  document.body.appendChild(popup);
 }
 
 function showTeamPokeOptions(teamIdx, p, teamSize){
-  document.getElementById('pc-popup')?.remove();
-  openPokeDetail(p, 'team', {teamIdx, teamSize});
+  const existing = document.getElementById('pc-popup');
+  if(existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.id='pc-popup';
+  popup.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;';
+  const canSend = teamSize > 1;
+  popup.innerHTML=`
+    <div style="background:linear-gradient(160deg,#05101e,#0a1828);border:2px solid rgba(248,208,48,.3);border-radius:18px;padding:24px;max-width:280px;width:90%;text-align:center;">
+      <img src="${p.sprite}" style="width:80px;height:80px;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(248,208,48,.3));">
+      <div style="font-size:17px;font-weight:800;color:#fff;margin:8px 0 2px;">${p.name.toUpperCase()}</div>
+      <div style="font-size:12px;color:#f8d030;margin-bottom:16px;">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
+      ${canSend
+        ? `<button onclick="teamPokeToPC(${teamIdx});document.getElementById('pc-popup').remove();renderHofPanel();" 
+            style="width:100%;font-family:Outfit,sans-serif;font-size:14px;font-weight:800;padding:12px;border:2px solid #88ccff;border-radius:12px;background:rgba(100,180,255,.12);color:#88ccff;cursor:pointer;margin-bottom:8px;">💻 שלח למחשב</button>`
+        : `<div style="font-size:12px;color:#e3350d;margin-bottom:12px;padding:8px;background:rgba(227,53,13,.1);border-radius:8px;">חייב להישאר לפחות פוקימון אחד בצוות</div>`
+      }
+      <button onclick="document.getElementById('pc-popup').remove()" 
+        style="width:100%;font-family:Outfit,sans-serif;font-size:13px;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.05);color:#888;cursor:pointer;">ביטול</button>
+    </div>`;
+  document.body.appendChild(popup);
 }
 
 function pcToTeam(storageIdx){
@@ -3808,7 +3421,51 @@ function teamPokeToPC(teamIdx){
   showToast(`${p.name.toUpperCase()} הועבר למחשב`,'#88ccff');
 }
 
-// renderHofPanel — see full definition below
+// Override renderHofPanel to also render PC
+const _origRenderHofPanel = renderHofPanel;
+// Patch HOF pokemon cards to show "send to PC" on tap
+function renderHofPanel(){
+  const t = TRAINERS.find(tr=>tr.id===(S.trainer||'red')) || TRAINERS[0];
+  document.getElementById('hof-trainer-img').src = t.sprite;
+  document.getElementById('hof-trainer-name').textContent = t.nameHe;
+  document.getElementById('hof-trainer-name').style.color = t.color;
+  const badgesEl = document.getElementById('hof-badges');
+  badgesEl.innerHTML='';
+  for(let i=0;i<8;i++){
+    const b=document.createElement('div');
+    b.className='bdg '+(i<S.badges?'on':'off');
+    b.textContent=GYMS[i]?.badgeIcon||'🔵';
+    badgesEl.appendChild(b);
+  }
+  document.getElementById('hof-score').textContent=score||0; if(S.score!==undefined) S.score=score;
+  // Sync ball counts
+  const hbc=document.getElementById('hof-ball-count'); if(hbc) hbc.textContent=S.balls||0;
+  const hgc=document.getElementById('hof-great-count'); if(hgc) hgc.textContent=S.greatBalls||0;
+  const hmc=document.getElementById('hof-master-count'); if(hmc) hmc.textContent=S.masterBalls||0;
+  const hsc=document.getElementById('hof-stone-count'); if(hsc) hsc.textContent=S.stones||0;
+  const grid = document.getElementById('hof-poke-grid');
+  grid.innerHTML='';
+  const fighters = S.team.filter(Boolean).slice(0,6);
+  fighters.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='hof-poke-card';
+    card.style.animationDelay=`${i*0.08}s`;
+    card.style.borderColor=typeColor(p.type)+'44';
+    card.title='לחץ להעביר למחשב';
+    card.innerHTML=`
+      <img src="${p.sprite}" alt="${p.name}">
+      <div class="hp-name">${p.name.toUpperCase()}</div>
+      <div class="hp-lv">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
+      <span class="hp-type" style="background:${typeColor(p.type)}">${p.type}</span>
+      <div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:2px;">💻 לחץ לשלוח למחשב</div>`;
+    card.onclick=()=> showTeamPokeOptions(i, p, fighters.length);
+    grid.appendChild(card);
+  });
+  if(fighters.length===0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.3);font-size:13px;padding:20px;">אין פוקימונים בצוות עדיין</div>';
+  }
+  renderHofPC();
+}
 
 // ════════════════════════
 // LEADERBOARD SYSTEM
@@ -4116,13 +3773,6 @@ function showAchievementUnlock(a){
   setTimeout(()=>{ el.style.transition='opacity .4s,transform .4s'; el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(-10px)'; setTimeout(()=>el.remove(),400); }, 3000);
 }
 
-function switchAchTab(tab){
-  document.getElementById('panel-ach').style.display   = tab==='ach'   ? 'block' : 'none';
-  document.getElementById('panel-stats').style.display = tab==='stats' ? 'block' : 'none';
-  document.getElementById('tab-ach').style.cssText   = tab==='ach'   ? 'flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(248,208,48,.4);background:rgba(248,208,48,.15);color:#f8d030;cursor:pointer;' : 'flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;';
-  document.getElementById('tab-stats').style.cssText = tab==='stats' ? 'flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(248,208,48,.4);background:rgba(248,208,48,.15);color:#f8d030;cursor:pointer;' : 'flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;';
-}
-
 function openAchievements(){
   const existing = document.getElementById('achievements-overlay');
   if(existing) { existing.remove(); return; }
@@ -4133,57 +3783,19 @@ function openAchievements(){
   const overlay = document.createElement('div');
   overlay.id = 'achievements-overlay';
   overlay.style.cssText='position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#050f0a,#0a0f05);overflow-y:auto;padding:20px 16px 100px;';
-  // סטטיסטיקות
-  const st = S.stats||{};
-  const totalCaught = (S.caught||[]).length;
-  const totalSeen   = (S.pokedex||[]).length || totalCaught;
-  const statsRows = [
-    {icon:'👀', label:'פוקימונים שפגשת',   val: st.met||0},
-    {icon:'⚔️', label:'ניצחונות בשדה',      val: st.wonWild||0},
-    {icon:'💀', label:'הפסדות בשדה',        val: st.lostWild||0},
-    {icon:'🔴', label:'פוקיבולים שזרקת',    val: st.ballsThrown||0},
-    {icon:'✅', label:'פוקימונים שלכדת',    val: st.caught||0},
-    {icon:'💨', label:'בריחות',             val: st.fled||0},
-    {icon:'✨', label:'שייניים שראית',       val: st.shinySeen||0},
-    {icon:'📖', label:'סך נלכד (פוקדקס)',   val: totalCaught},
-  ];
-  const statsHtml = statsRows.map(r=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">${r.icon}</span>
-        <span style="font-size:13px;color:rgba(255,255,255,.7);">${r.label}</span>
-      </div>
-      <span style="font-size:16px;font-weight:900;color:#f8d030;">${r.val.toLocaleString()}</span>
-    </div>`).join('');
-
   overlay.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
       <button onclick="document.getElementById('achievements-overlay').remove()" style="font-family:Outfit,sans-serif;font-size:13px;padding:8px 14px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;cursor:pointer;">← חזרה</button>
       <h2 style="color:#f8d030;font-size:20px;font-weight:900;flex:1;">🏆 הישגים</h2>
       <span style="font-size:13px;color:#38c878;font-weight:800;">${done}/${total}</span>
     </div>
-
-    <!-- טאבים -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button id="tab-ach" onclick="switchAchTab('ach')" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(248,208,48,.4);background:rgba(248,208,48,.15);color:#f8d030;cursor:pointer;">🏆 הישגים</button>
-      <button id="tab-stats" onclick="switchAchTab('stats')" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);cursor:pointer;">📊 סטטיסטיקות</button>
-    </div>
-
-    <!-- הישגים -->
-    <div id="panel-ach">
-      <div style="background:rgba(56,200,120,.08);border:1px solid rgba(56,200,120,.2);border-radius:12px;padding:10px 16px;margin-bottom:16px;">
-        <div style="height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,#38c878,#f8d030);border-radius:3px;transition:width .6s;"></div>
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;text-align:center;">${Math.round(done/total*100)}% הושלמו</div>
+    <div style="background:rgba(56,200,120,.08);border:1px solid rgba(56,200,120,.2);border-radius:12px;padding:10px 16px;margin-bottom:16px;">
+      <div style="height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${Math.round(done/total*100)}%;background:linear-gradient(90deg,#38c878,#f8d030);border-radius:3px;transition:width .6s;"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px;" id="ach-list"></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;text-align:center;">${Math.round(done/total*100)}% הושלמו</div>
     </div>
-
-    <!-- סטטיסטיקות -->
-    <div id="panel-stats" style="display:none;">
-      <div style="display:flex;flex-direction:column;gap:8px;">${statsHtml}</div>
-    </div>`;
+    <div style="display:flex;flex-direction:column;gap:8px;" id="ach-list"></div>`;
   document.body.appendChild(overlay);
 
   const list = overlay.querySelector('#ach-list');
@@ -4268,7 +3880,7 @@ function initTrainerSelect(){
     card.style.borderColor = t.color+'44';
     card.innerHTML=`
       <div class="tc-check" style="color:${t.color}">✓</div>
-      <img src="${t.sprite}" alt="${t.name}" onerror="this.style.display='none'">
+      <img src="${t.sprite}" alt="${t.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><rect width=\'80\' height=\'80\' fill=\'%23333\'/><text x=\'50%\' y=\'55%\' text-anchor=\'middle\' fill=\'white\' font-size=\'30\'>👤</text></svg>'">
       <div class="tc-name">${t.nameHe}</div>
       <div class="tc-desc">${t.desc}</div>`;
     card.onclick=()=>{
@@ -4350,14 +3962,11 @@ function renderHofPanel(){
     card.className='hof-poke-card';
     card.style.animationDelay=`${i*0.08}s`;
     card.style.borderColor=typeColor(p.type)+'44';
-    card.style.cursor='pointer';
     card.innerHTML=`
-      ${i===0?'<div style="position:absolute;top:4px;right:4px;font-size:10px;background:rgba(248,208,48,.2);border:1px solid rgba(248,208,48,.4);border-radius:6px;padding:1px 5px;color:#f8d030;font-weight:800;">1️⃣</div>':''}
       <img src="${p.sprite}" alt="${p.name}">
       <div class="hp-name">${p.name.toUpperCase()}</div>
       <div class="hp-lv">Lv${p.level||1} · ⚡${effectivePower(p)}</div>
       <span class="hp-type" style="background:${typeColor(p.type)}">${p.type}</span>`;
-    card.onclick=()=> openPokeDetail(p, 'team', {teamIdx:i, teamSize:fighters.length});
     grid.appendChild(card);
   });
 
@@ -4729,11 +4338,9 @@ async function pvpHostResolve(room){
   const gPoke = st.guestTeam[st.guestIdx];
 
   const calcDmg = (atk, def, move) => {
-    const mult = move==='type' ? ((TC[atk.type]||{})[def.type] ?? 1) : 1;
-    // type: spatk vs spdef | normal: attack vs defense
-    const atkStat = Math.max(10, move==='type' ? (atk.spatk||atk.attack) : atk.attack);
-    const defStat = Math.max(1,  move==='type' ? (def.spdef||50)         : (def.defense||50));
-    return Math.max(1, Math.round((atkStat/defStat)*80*mult*(0.9+Math.random()*0.2)));
+    const mult = (TC[atk.type]||{})[def.type] ?? 1;
+    const base = Math.max(10, (atk.attack||50)) * (1+(atk.level||1)*0.1);
+    return Math.max(1, Math.round(base * (move==='type'?mult:1) * (0.9+Math.random()*0.2)));
   };
 
   const hDmg = calcDmg(hPoke, gPoke, hostMove);
@@ -4996,10 +4603,30 @@ window._onAuthReady = async function(user){
 
 <!-- ═══ HALL OF FAME PANEL ═══ -->
 <div id="hof-panel">
-  <div class="hof-trainer-wrap" style="display:none;">
+  <div class="hof-trainer-wrap">
     <img id="hof-trainer-img" src="" alt="">
     <div class="hof-title" id="hof-trainer-name"></div>
     <div class="hof-trainer-name">המאמן שלך</div>
+    <!-- BALL COUNTS below sprite -->
+    <div id="hof-balls-row" style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:4px;background:rgba(227,53,13,.15);border:1px solid rgba(227,53,13,.4);border-radius:10px;padding:4px 10px;">
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#e3350d" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span style="font-size:13px;font-weight:800;color:#ff7755;" id="hof-ball-count">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;background:rgba(34,102,204,.15);border:1px solid rgba(34,102,204,.4);border-radius:10px;padding:4px 10px;">
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#2266cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span style="font-size:13px;font-weight:800;color:#6699ff;" id="hof-great-count">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;background:rgba(136,34,204,.15);border:1px solid rgba(136,34,204,.4);border-radius:10px;padding:4px 10px;">
+        <svg width="16" height="16" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#8822cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
+        <span style="font-size:13px;font-weight:800;color:#cc88ff;" id="hof-master-count">0</span>
+      </div>
+      <div onclick="useEvolutionStone()" title="לחץ להשתמש באבן" style="display:flex;align-items:center;gap:4px;background:rgba(248,208,48,.12);border:1.5px solid rgba(248,208,48,.5);border-radius:10px;padding:4px 10px;cursor:pointer;transition:background .15s;">
+        <span style="font-size:14px;">🪨</span>
+        <span style="font-size:13px;font-weight:800;color:#f8d030;" id="hof-stone-count">0</span>
+        <span style="font-size:9px;color:rgba(248,208,48,.6);">אבני התפתחות</span>
+      </div>
+    </div>
   </div>
   <div class="hof-badges" id="hof-badges"></div>
   <div class="hof-score-row">
@@ -5009,32 +4636,13 @@ window._onAuthReady = async function(user){
       <div class="hs-lbl">ניקוד</div>
     </div>
   </div>
-  <!-- BALL + STONE COUNTS -->
-  <div id="hof-balls-row" style="display:flex;gap:6px;margin:12px 0 6px;align-items:center;justify-content:center;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:4px;background:rgba(227,53,13,.15);border:1px solid rgba(227,53,13,.4);border-radius:10px;padding:4px 10px;">
-      <svg width="14" height="14" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#e3350d" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-      <span style="font-size:12px;font-weight:800;color:#ff7755;" id="hof-ball-count">0</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;background:rgba(34,102,204,.15);border:1px solid rgba(34,102,204,.4);border-radius:10px;padding:4px 10px;">
-      <svg width="14" height="14" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#2266cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-      <span style="font-size:12px;font-weight:800;color:#6699ff;" id="hof-great-count">0</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:4px;background:rgba(136,34,204,.15);border:1px solid rgba(136,34,204,.4);border-radius:10px;padding:4px 10px;">
-      <svg width="14" height="14" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#8822cc" stroke="#222" stroke-width="3"/><rect x="2" y="27" width="56" height="6" fill="#222"/><circle cx="30" cy="30" r="7" fill="white" stroke="#222" stroke-width="2"/></svg>
-      <span style="font-size:12px;font-weight:800;color:#cc88ff;" id="hof-master-count">0</span>
-    </div>
-    <div onclick="useEvolutionStone()" title="לחץ להשתמש באבן" style="display:flex;align-items:center;gap:4px;background:rgba(248,208,48,.12);border:1.5px solid rgba(248,208,48,.5);border-radius:10px;padding:4px 10px;cursor:pointer;transition:background .15s;">
-      <span style="font-size:13px;">🪨</span>
-      <span style="font-size:12px;font-weight:800;color:#f8d030;" id="hof-stone-count">0</span>
-      <span style="font-size:9px;color:rgba(248,208,48,.6);">אבנים</span>
-    </div>
-  </div>
   <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;letter-spacing:3px;">— הצוות שלי —</div>
   <div class="hof-poke-grid" id="hof-poke-grid"></div>
 
-  <!-- BUTTONS -->
+  <!-- BUTTONS — right after team -->
   <div style="margin-top:16px;display:flex;gap:10px;width:100%;max-width:360px;">
     <button onclick="closeHofPanel()" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:12px;border:2px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;">✕ סגור</button>
+    <button onclick="closeHofPanel();toggleTeam()" style="flex:1;font-family:Outfit,sans-serif;font-size:13px;font-weight:800;padding:12px;border:2px solid #f8d030;border-radius:12px;background:rgba(248,208,48,.12);color:#f8d030;cursor:pointer;">📋 צוות מלא</button>
   </div>
 
   <!-- PC STORAGE SECTION — below buttons -->
