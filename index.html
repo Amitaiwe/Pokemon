@@ -14,7 +14,7 @@ import { getDatabase, ref, set, get, onValue, off, push, remove, serverTimestamp
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const FB_CONFIG = {
-  apiKey: "AIzaSyBiL-db2OKxiV21N1mKkT7Ittj-QgP-YVw",
+  apiKey: "AIzaSyBiL-db2OKxiv2N1mKkT7Ittj-QgP-YVw",
   authDomain: "pokemon-5d710.firebaseapp.com",
   projectId: "pokemon-5d710",
   storageBucket: "pokemon-5d710.firebasestorage.app",
@@ -165,7 +165,7 @@ async function fightElite(enemyPokes, el){
       if(!pp) continue;
       let ppHP = pp.maxHP || pp.currentHP || 50;
       
-      // קרב 1v1 מהיר
+      // קרב 1v3.4.17 מהיר
       const TC = {fire:{grass:2,ice:2,bug:2,steel:2,water:.5,rock:.5,dragon:.5},
         water:{fire:2,ground:2,rock:2,grass:.5,dragon:.5},
         grass:{water:2,ground:2,rock:2,fire:.5,flying:.5,bug:.5,dragon:.5},
@@ -1111,7 +1111,7 @@ body {
   <div id="wild-card">
     <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px;">
       <span id="wild-rarity" style="display:none;"></span>
-      <span id="wild-level" style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.15);padding:2px 8px;border-radius:20px;border:1px solid rgba(56,200,120,.3);">Lv.1</span>
+      <span id="wild-level" style="font-size:12px;font-weight:800;color:#38c878;background:rgba(56,200,120,.15);padding:2px 8px;border-radius:20px;border:1px solid rgba(56,200,120,.3);">Lv3.4.17</span>
     </div>
     <img id="wild-sprite" src="" alt="">
     <div class="poke-name" id="wild-name"></div>
@@ -1183,7 +1183,7 @@ body {
     <h2 style="color:#f8d030;margin-bottom:6px;">פוקימון</h2>
     <div class="osub" style="margin-bottom:20px;">התחבר כדי לשמור את ההתקדמות שלך בענן</div>
     <button onclick="fbSignIn()" style="font-family:Outfit,sans-serif;font-size:15px;font-weight:800;padding:14px 20px;width:100%;border:2px solid rgba(255,255,255,.3);border-radius:12px;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.2 0 5.9 1.1 8.1 2.9l6-6C34.3 3.1 29.5 1 24 1 14.8 1 6.9 6.7 3.3 14.8l7 5.4C12 14.1 17.5 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.8-2.1 5.2-4.5 6.8l7 5.4C43.5 37 46.5 31.2 46.5 24.5z"/><path fill="#FBBC05" d="M10.3 28.8A14.6 14.6 0 0 1 9.5 24c0-1.7.3-3.3.8-4.8l-7-5.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.5 10.8l7.8-6z"/><path fill="#34A853" d="M24 47c5.5 0 10.1-1.8 13.5-4.9l-7-5.4c-1.8 1.2-4.1 1.9-6.5 1.9-6.5 0-12-4.6-13.7-10.8l-7.8 6C6.9 41.3 14.8 47 24 47z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.2 0 5.9 1.1 8.1 2.9l6-6C34.3 3.1 29.5 1 24 1 14.8 1 6.9 6.7 3.3 14.8l7 5.4C12 14.1 17.5 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v3.4.17h12.7c-.5 2.8-2.1 5.2-4.5 6.8l7 5.4C43.5 37 46.5 31.2 46.5 24.5z"/><path fill="#FBBC05" d="M10.3 28.8A14.6 14.6 0 0 1 9.5 24c0-1.7.3-3.3.8-4.8l-7-5.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.5 10.8l7.8-6z"/><path fill="#34A853" d="M24 47c5.5 0 10.1-1.8 13.5-4.9l-7-5.4c-1.8 1.2-4.1 1.9-6.5 1.9-6.5 0-12-4.6-13.7-10.8l-7.8 6C6.9 41.3 14.8 47 24 47z"/></svg>
       התחבר עם Google
     </button>
     <button onclick="startWithSave(null)" style="font-family:Outfit,sans-serif;font-size:12px;padding:8px;width:100%;border:none;background:none;color:#555;cursor:pointer;">המשך ללא חשבון (שמירה מקומית בלבד)</button>
@@ -1825,7 +1825,7 @@ function initStarters(){
       document.getElementById('confirm-btn').disabled=false;
       // Update preview
       const prev=document.getElementById('starter-preview');
-      if(prev){ prev.style.display='block';
+      if(prev){ prevstyle.display='block';
         document.getElementById('starter-preview-img').src=p.sprite;
         document.getElementById('starter-preview-name').textContent=p.name.toUpperCase();
         const tEl=document.getElementById('starter-preview-type');
@@ -2214,11 +2214,9 @@ function showWildButtons(state){
     const fBtn=document.createElement('button');
     fBtn.className='wbtn wbtn-fight'; fBtn.textContent='⚔️ הלחם';
     fBtn.addEventListener('click',()=>doFieldBattle());
-    fBtn.ontouchend=e=>{e.preventDefault();doFieldBattle();};
     const rBtn=document.createElement('button');
     rBtn.className='wbtn wbtn-flee'; rBtn.textContent='🏃 ברח';
     rBtn.addEventListener('click',()=>flee());
-    rBtn.ontouchend=e=>{e.preventDefault();flee();};
     btns.appendChild(fBtn); btns.appendChild(rBtn);
   } else if(state==='won'){
     const xpPreview = S.wild ? effectivePower(S.wild) : 0;
@@ -2245,6 +2243,7 @@ function showWildButtons(state){
 // Field battle - automatic fast combat
 async function doFieldBattle(){
   if(!S.wild || !S.team.filter(Boolean).length) return;
+  if(S._fighting) return; S._fighting=true;
   const fighter = S.team.filter(Boolean)[0];
   const enemy = S.wild;
   document.getElementById('wild-btns-area').innerHTML = '<div style="color:#f8d030;font-size:13px;font-weight:700;text-align:center;">⚔️ נלחם...</div>';
@@ -2289,11 +2288,13 @@ async function doFieldBattle(){
     if(_streak===10) showToast('🔥 רצף 10! סיכויי שייני ואגדי עלו!','#f8a030');
     else if(_streak===20) showToast('🔥🔥 רצף 20! סיכויים גבוהים עוד יותר!','#ff6b35');
     else if(_streak===30) showToast('🔥🔥🔥 רצף 30 — מקסימום! סיכויים מקסימליים!','#e3350d');
+    S._fighting=false;
     await sleep(400);
     showWildButtons('won');
   } else {
     log.innerHTML += `<div style="color:#e3350d;font-weight:800;margin-top:4px;">😔 הפסדת...</div>`;
     S.winStreak = 0;
+    S._fighting=false;
     await sleep(800);
     log.style.display='none';
     finishEnc();
@@ -2446,6 +2447,7 @@ function dismissSwap(){pending=null;document.getElementById('swap-overlay').styl
 function flee(){if(S.catching)return;finishEnc();}
 
 function finishEnc(){
+  S._fighting=false;
   showWildButtons('show'); // always restore gym/pvp buttons
   S.wild=null;
   S.catching=false;
@@ -2736,7 +2738,6 @@ function requestBattleSwitch(){
       if(resolve) resolve({mult:0,isSwitch:true});
     };
     card.onclick = _doSwitch;
-    card.ontouchend = e=>{ e.preventDefault(); _doSwitch(); };
     opts.appendChild(card);
   });
   // Cancel button
@@ -2760,8 +2761,6 @@ function playerChooseMove(pp, ep){
     const mtBtn = document.getElementById('move-type');
     mnBtn.onclick = _resolveNorm;
     mtBtn.onclick = _resolveType;
-    mnBtn.ontouchend = e=>{ e.preventDefault(); _resolveNorm(); };
-    mtBtn.ontouchend = e=>{ e.preventDefault(); _resolveType(); };
     document.getElementById('move-normal').textContent='👊 מכה רגילה';
     document.getElementById('move-type').textContent=`✨ ${pp.type.toUpperCase()}`;
     document.getElementById('move-type').style.background=typeColor(pp.type);
@@ -3896,8 +3895,8 @@ function openAchievements(){
   ACHIEVEMENTS.forEach(a=>{
     const isUnlocked = unlocked.includes(a.id);
     const div = document.createElement('div');
-    div.style.cssText=`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:${isUnlocked?'rgba(56,200,120,.08)':'rgba(255,255,255,.03)'};border:1px solid ${isUnlocked?'rgba(56,200,120,.3)':'rgba(255,255,255,.06)'};`;
-    div.innerHTML=`
+    divstyle.cssText=`display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:${isUnlocked?'rgba(56,200,120,.08)':'rgba(255,255,255,.03)'};border:1px solid ${isUnlocked?'rgba(56,200,120,.3)':'rgba(255,255,255,.06)'};`;
+    divinnerHTML=`
       <span style="font-size:24px;${isUnlocked?'':'filter:grayscale(1);opacity:.3;'}">${a.icon}</span>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:800;color:${isUnlocked?'#fff':'rgba(255,255,255,.3)'};">${isUnlocked?a.name:'???'}</div>
@@ -3923,9 +3922,9 @@ function openPlayerProfile(entry){
   };
 
   const ov = document.createElement('div');
-  ov.id = 'profile-overlay';
+  ovid = 'profile-overlay';
   ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px;';
-  ov.onclick = e=>{ if(e.target===ov) ov.remove(); };
+  ovonclick = e=>{ if(e.target===ov) ovremove(); };
 
   const team = entry.team||[];
   const teamHtml = team.length
@@ -3941,7 +3940,7 @@ function openPlayerProfile(entry){
   const badgeStr = '🏅'.repeat(Math.min(entry.badges||0,8));
   const sprite = tSprites[entry.trainer]||tSprites.red;
 
-  ov.innerHTML=`
+  ovinnerHTML=`
     <div style="background:linear-gradient(160deg,#0a1a0f,#050f08);border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:340px;position:relative;">
       <button onclick="document.getElementById('profile-overlay').remove()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,.4);font-size:20px;cursor:pointer;line-height:1;">✕</button>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
@@ -4306,7 +4305,7 @@ async function pvpCreate(){
   pvpShowPhase('waiting');
   // Add share button
   const waitDiv = document.getElementById('pvp-phase-waiting');
-  const existShare = waitDiv.querySelector('.pvp-share-btn');
+  const existShare = waitDivquerySelector('.pvp-share-btn');
   if(!existShare){
     const shareBtn = document.createElement('button');
     shareBtn.className='pvp-share-btn';
@@ -4317,7 +4316,7 @@ async function pvpCreate(){
       const msg = encodeURIComponent(`מזמין אותך לקרב פוקימון! קוד החדר: ${code}\n${window.location.href}`);
       window.open('https://wa.me/?text='+msg,'_blank');
     };
-    waitDiv.insertBefore(shareBtn, waitDiv.querySelector('.dismiss-btn'));
+    waitDivinsertBefore(shareBtn, waitDivquerySelector('.dismiss-btn'));
   }
   pvpListenRoom(code);
 }
