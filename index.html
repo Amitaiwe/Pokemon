@@ -840,41 +840,265 @@ body {
 
 /* ===== EVOLUTION OVERLAY ===== */
 #evolutionOverlay {
-  background: radial-gradient(ellipse, #1a1a4e 0%, #0a0a1a 100%);
+  background: radial-gradient(ellipse, #0a0a2e 0%, #000005 100%);
+  overflow: hidden;
+}
+
+#evolutionOverlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120,80,255,0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,200,50,0.1) 0%, transparent 40%);
+  pointer-events: none;
+  animation: evoBackground 3s ease-in-out infinite alternate;
+}
+
+@keyframes evoBackground {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
 }
 
 .evolution-container {
   text-align: center;
-  padding: 40px 20px;
+  padding: 30px 20px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
 }
 
-.evolution-container h2 {
+.evo-title {
   font-family: 'Press Start 2P', monospace;
-  font-size: clamp(12px, 2.5vw, 18px);
+  font-size: clamp(11px, 2.5vw, 16px);
   color: var(--yellow);
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  text-shadow: 0 0 20px rgba(245,197,24,0.8);
+  animation: titleFlicker 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes titleFlicker {
+  from { opacity: 0.85; text-shadow: 0 0 10px rgba(245,197,24,0.5); }
+  to { opacity: 1; text-shadow: 0 0 30px rgba(245,197,24,1), 0 0 60px rgba(245,197,24,0.4); }
 }
 
 .evolution-imgs {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
-.evo-sprite {
-  animation: evolveGlow 1s ease-in-out infinite alternate;
+.evo-sprite-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.evo-sprite img { width: 100px; height: 100px; image-rendering: pixelated; }
-
-@keyframes evolveGlow {
-  from { filter: drop-shadow(0 0 10px white); }
-  to { filter: drop-shadow(0 0 30px #aaf) brightness(1.5); }
+.evo-sprite-wrap span {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
-.evo-arrow { font-size: 36px; color: var(--yellow); }
+.evo-sprite-old {
+  animation: evoOldPulse 0.6s ease-in-out infinite alternate;
+}
+
+.evo-sprite-new {
+  animation: evoNewAppear 0.8s ease-out forwards, evoNewGlow 1s ease-in-out 0.8s infinite alternate;
+  opacity: 0;
+}
+
+@keyframes evoOldPulse {
+  from { filter: brightness(1) drop-shadow(0 0 8px white); transform: scale(1); }
+  to { filter: brightness(2) drop-shadow(0 0 25px white) saturate(0); transform: scale(1.05); }
+}
+
+@keyframes evoNewAppear {
+  0% { opacity: 0; transform: scale(0.3) rotate(-10deg); filter: brightness(3) saturate(0); }
+  60% { opacity: 1; transform: scale(1.15) rotate(3deg); filter: brightness(2) saturate(0.5); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1); }
+}
+
+@keyframes evoNewGlow {
+  from { filter: drop-shadow(0 0 12px #aaf) brightness(1.1); }
+  to { filter: drop-shadow(0 0 30px #88f) brightness(1.3); }
+}
+
+.evo-sprite-old img,
+.evo-sprite-new img {
+  width: clamp(90px, 20vw, 130px);
+  height: clamp(90px, 20vw, 130px);
+  image-rendering: pixelated;
+}
+
+.evo-arrow-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.evo-arrow {
+  font-size: 32px;
+  color: var(--yellow);
+  animation: arrowPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes arrowPulse {
+  from { transform: translateX(0); opacity: 0.6; }
+  to { transform: translateX(6px); opacity: 1; }
+}
+
+.evo-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.evo-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--yellow);
+  animation: particleFly var(--dur, 1.5s) ease-out var(--delay, 0s) infinite;
+  opacity: 0;
+}
+
+@keyframes particleFly {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx, 60px), var(--ty, -80px)) scale(0); opacity: 0; }
+}
+
+.evo-name-reveal {
+  font-size: clamp(18px, 5vw, 28px);
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 0 20px rgba(150,150,255,0.8);
+  animation: nameReveal 0.5s ease-out 1.2s both;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+@keyframes nameReveal {
+  from { opacity: 0; transform: translateY(20px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.evo-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  animation: nameReveal 0.5s ease-out 1.5s both;
+}
+
+/* ===== SWITCH POKEMON POPUP ===== */
+.switch-popup {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.switch-popup-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--yellow);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.switch-pokemon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.switch-pokemon-btn {
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font-family: 'Heebo', sans-serif;
+  width: 100%;
+  text-align: right;
+}
+
+.switch-pokemon-btn:hover { border-color: var(--yellow); background: rgba(245,197,24,0.1); }
+
+.switch-pokemon-btn img { width: 48px; height: 48px; image-rendering: pixelated; flex-shrink: 0; }
+
+.switch-poke-info { flex: 1; }
+.switch-poke-name { font-size: 14px; font-weight: 700; text-transform: capitalize; }
+.switch-poke-level { font-size: 12px; color: var(--text-muted); }
+.switch-poke-hp { font-size: 11px; margin-top: 4px; }
+.switch-hp-bar { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 3px; overflow: hidden; }
+.switch-hp-fill { height: 100%; border-radius: 2px; }
+
+/* ===== LEVEL UP TOAST ===== */
+.levelup-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg, #1a1a3e, #2a1a5e);
+  border: 2px solid var(--yellow);
+  border-radius: 20px;
+  padding: 20px 32px;
+  text-align: center;
+  z-index: 9998;
+  box-shadow: 0 0 40px rgba(245,197,24,0.4), var(--shadow);
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+  opacity: 0;
+  min-width: 220px;
+}
+
+.levelup-toast.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.levelup-toast.hide {
+  transform: translate(-50%, -50%) scale(0.8);
+  opacity: 0;
+}
+
+.levelup-poke-name { font-size: 13px; color: var(--text-muted); text-transform: capitalize; margin-bottom: 4px; }
+.levelup-text { font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--yellow); text-shadow: 0 0 12px rgba(245,197,24,0.8); }
+.levelup-number { font-size: 36px; font-weight: 900; color: white; line-height: 1.1; margin: 4px 0; }
+.levelup-stars { font-size: 20px; animation: starSpin 1s linear infinite; display: inline-block; }
+@keyframes starSpin { to { transform: rotate(360deg); } }
+
+/* ===== BATTLE ANIMATIONS ===== */
+@keyframes battleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes battleBob {
+  0%, 100% { transform: translateY(0px) scaleX(-1); }
+  50% { transform: translateY(-4px) scaleX(-1); }
+}
+
+.battle-pokemon.player img { animation: battleFloat 2s ease-in-out infinite; }
+.battle-pokemon.enemy img { animation: battleBob 2.5s ease-in-out infinite; }
 
 /* ===== TYPE COLORS ===== */
 .type-fire { background: #ff6b35; color: white; }
@@ -925,6 +1149,247 @@ body {
 }
 
 .shake { animation: shake 0.3s ease-in-out; }
+/* ===== POKEDEX ===== */
+.pokedex-container {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.pokedex-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+
+.pokedex-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--yellow);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.pokedex-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+
+.pdex-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.07);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.pdex-icon { font-size: 16px; }
+
+.pokedex-search-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+.pokedex-search {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 9px 14px;
+  color: white;
+  font-family: 'Heebo', sans-serif;
+  font-size: 14px;
+  outline: none;
+  direction: rtl;
+}
+
+.pokedex-search:focus { border-color: var(--yellow); }
+.pokedex-search::placeholder { color: var(--text-muted); }
+
+.pdex-filter-btns { display: flex; gap: 8px; }
+
+.pdex-filter-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pdex-filter-btn.active, .pdex-filter-btn:hover {
+  background: rgba(245,197,24,0.15);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.pokedex-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+
+.pdex-item {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.pdex-item:hover { border-color: var(--yellow); background: rgba(245,197,24,0.08); }
+.pdex-item.caught { border-color: rgba(76,175,80,0.5); background: rgba(76,175,80,0.06); }
+.pdex-item.seen { border-color: rgba(42,117,187,0.5); background: rgba(42,117,187,0.06); }
+.pdex-item.unseen .pdex-sprite { filter: brightness(0); opacity: 0.3; }
+
+.pdex-sprite {
+  width: 56px; height: 56px;
+  image-rendering: pixelated;
+  display: block;
+  margin: 0 auto;
+}
+
+.pdex-num { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
+.pdex-name { font-size: 10px; font-weight: 700; text-transform: capitalize; }
+.pdex-item.unseen .pdex-name { color: var(--text-muted); filter: blur(3px); user-select: none; }
+
+.pdex-status-icon {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* POKEDEX DETAIL */
+.pdex-detail-container {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.pdex-detail-header {
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.pdex-detail-close {
+  position: absolute;
+  top: 14px; left: 14px;
+  background: rgba(255,255,255,0.1);
+  border: none; color: white;
+  width: 32px; height: 32px;
+  border-radius: 50%; cursor: pointer; font-size: 16px;
+}
+
+.pdex-detail-num { font-size: 12px; color: var(--text-muted); }
+
+.pdex-detail-sprite-wrap {
+  position: relative;
+  width: 120px; height: 120px;
+}
+
+.pdex-detail-sprite {
+  width: 120px; height: 120px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+}
+
+.pdex-detail-sprite.unseen-detail {
+  filter: brightness(0) opacity(0.2);
+}
+
+.pdex-detail-name {
+  font-size: 24px; font-weight: 900;
+  text-transform: capitalize;
+}
+
+.pdex-detail-name.unseen-detail { filter: blur(6px); }
+
+.pdex-detail-body { padding: 16px 20px 24px; }
+
+.pdex-detail-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  text-align: center;
+  margin: 10px 0 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.pdex-detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.pdex-detail-stat {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.pdex-detail-stat-label { font-size: 11px; color: var(--text-muted); }
+.pdex-detail-stat-value { font-size: 18px; font-weight: 900; }
+
+.pdex-detail-bar-wrap { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.pdex-detail-bar-fill { height: 100%; border-radius: 2px; background: var(--blue); }
+
+.pdex-caught-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(76,175,80,0.15);
+  border: 1px solid rgba(76,175,80,0.4);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4caf50;
+  margin-bottom: 12px;
+}
+
+/* Team slot pokeball icon */
+.team-slot .caught-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 10px;
+  background: var(--dark);
+  border-radius: 50%;
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
 </style>
 </head>
 <body>
@@ -970,6 +1435,7 @@ body {
     </div>
     <div class="top-bar-title">PokéMon ForEveR</div>
     <div class="top-bar-actions">
+      <button class="btn-small" onclick="openPokedex()">📖 פוקדקס</button>
       <button class="btn-small" onclick="openPC()">💻 PC</button>
       <button class="btn-small" onclick="signOut()">יציאה</button>
     </div>
@@ -1067,8 +1533,56 @@ body {
   <div class="evolution-container" id="evolutionContent"></div>
 </div>
 
+<!-- POKEDEX OVERLAY -->
+<div class="overlay" id="pokedexOverlay">
+  <div class="pokedex-container">
+    <button class="pc-close" onclick="closeOverlay('pokedexOverlay')">✕</button>
+    <div class="pokedex-header">
+      <div class="pokedex-title">📖 פוקדקס</div>
+      <div class="pokedex-stats">
+        <div class="pdex-stat"><span class="pdex-icon">👁️</span><span id="pdexSeen">0</span> ראיתי</div>
+        <div class="pdex-stat"><span class="pdex-icon">⚾</span><span id="pdexCaught">0</span> לכדתי</div>
+      </div>
+      <div class="pokedex-search-wrap">
+        <input class="pokedex-search" id="pokedexSearch" type="text" placeholder="🔍 חפש פוקימון..." oninput="filterPokedex(this.value)">
+        <div class="pdex-filter-btns">
+          <button class="pdex-filter-btn active" onclick="setPokedexFilter('all', this)">הכל</button>
+          <button class="pdex-filter-btn" onclick="setPokedexFilter('seen', this)">ראיתי</button>
+          <button class="pdex-filter-btn" onclick="setPokedexFilter('caught', this)">לכדתי</button>
+        </div>
+      </div>
+    </div>
+    <div class="pokedex-grid" id="pokedexGrid"></div>
+    <div id="pokedexLoading" style="text-align:center;padding:30px;color:var(--text-muted);display:none">
+      <span class="loading-spinner"></span> טוען פוקדקס...
+    </div>
+  </div>
+</div>
+
+<!-- POKEDEX DETAIL OVERLAY -->
+<div class="overlay" id="pokedexDetailOverlay">
+  <div class="pdex-detail-container" id="pdexDetailContent"></div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
+
+<!-- LEVEL UP TOAST -->
+<div class="levelup-toast" id="levelupToast">
+  <div class="levelup-poke-name" id="levelupPokeName"></div>
+  <div class="levelup-text">עלה רמה!</div>
+  <div class="levelup-number" id="levelupNumber"></div>
+  <div><span class="levelup-stars">⭐</span></div>
+</div>
+
+<!-- SWITCH POKEMON OVERLAY -->
+<div class="overlay" id="switchOverlay">
+  <div class="switch-popup">
+    <div class="switch-popup-title">🔄 בחר פוקימון</div>
+    <div class="switch-pokemon-list" id="switchPokemonList"></div>
+    <button class="btn-battle btn-run" onclick="closeOverlay('switchOverlay')" style="width:100%">ביטול</button>
+  </div>
+</div>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -1155,11 +1669,13 @@ let G = {
   uid: null,
   trainerChoice: null,
   starterChoice: null,
-  team: [],       // [{...pokeData, currentHP, level, xp, id}]
+  team: [],
   pc: [],
   pokeballs: 5,
-  gymProgress: 0,  // gyms beaten (0-8)
-  badges: 0
+  gymProgress: 0,
+  badges: 0,
+  seen: {},    // {pokemonId: true}
+  caught: {}   // {pokemonId: true}
 };
 
 let currentUser = null;
@@ -1197,7 +1713,9 @@ function saveGame() {
     pc: G.pc,
     pokeballs: G.pokeballs,
     gymProgress: G.gymProgress,
-    badges: G.badges
+    badges: G.badges,
+    seen: G.seen || {},
+    caught: G.caught || {}
   };
   db.ref('players/' + G.uid).set(data);
 }
@@ -1212,7 +1730,13 @@ function loadGame() {
       G.pokeballs = data.pokeballs != null ? data.pokeballs : 5;
       G.gymProgress = data.gymProgress || 0;
       G.badges = data.badges || 0;
-      // רטרואקטיבי — תמיד HP מלא בטעינה
+      G.seen = data.seen || {};
+      G.caught = data.caught || {};
+      // retroactively mark team+pc as caught/seen
+      [...G.team, ...G.pc].forEach(p => {
+        G.seen[p.id] = true;
+        G.caught[p.id] = true;
+      });
       healAllPokemon();
       saveGame();
       enterGameScreen();
@@ -1277,6 +1801,8 @@ async function startGame() {
   const starter = makePokemon(starterData, 5);
   G.team = [starter];
   G.pc = [];
+  G.seen = { [starter.id]: true };
+  G.caught = { [starter.id]: true };
 
   saveGame();
   enterGameScreen();
@@ -1528,6 +2054,9 @@ function startWildBattle(enemy) {
 
   battleState = { enemy, isGym: false, catchAttempts: 0, gymIndex: -1, gymPokeIndex: 0, enemyTeam: null };
   catchAttempts = 0;
+  // Mark as seen
+  G.seen[enemy.id] = true;
+  saveGame();
   setupBattleUI(active, enemy);
   showOverlay('battleOverlay');
   document.getElementById('battleActions').classList.remove('hidden');
@@ -1720,6 +2249,8 @@ async function tryToCatch() {
   const success = Math.random() < 0.5;
   if (success) {
     setBattleLog(`✅ ${battleState.enemy.name} נתפס!`);
+    G.caught[battleState.enemy.id] = true;
+    G.seen[battleState.enemy.id] = true;
     addToTeamOrPC(battleState.enemy);
     healAllPokemon();
     saveGame();
@@ -1779,22 +2310,39 @@ function runFromBattle() {
 }
 
 function switchPokemonInBattle() {
-  const alive = G.team.filter(p => p.currentHP > 0);
-  if (alive.length <= 1) { showToast('אין פוקימונים אחרים זמינים'); return; }
+  const current = getActivePokemon();
+  const opts = G.team.filter(p => p.currentHP > 0 && p !== current);
+  if (!opts.length) { showToast('אין פוקימונים אחרים זמינים'); return; }
 
-  // Simple: show inline options
-  const opts = alive.filter(p => p !== getActivePokemon());
-  const names = opts.map((p, i) => `[${i+1}] ${p.name} (רמה ${p.level})`).join('\n');
-  const choice = prompt('בחר פוקימון:\n' + names + '\n\nהזן מספר:');
-  const idx = parseInt(choice) - 1;
-  if (idx >= 0 && idx < opts.length) {
-    const chosen = opts[idx];
-    document.getElementById('battlePlayerSprite').src = chosen.backSprite || chosen.sprite;
-    document.getElementById('battlePlayerName').textContent = chosen.name;
-    document.getElementById('battlePlayerLevel').textContent = 'רמה ' + chosen.level;
-    updateBattleHP('player', chosen);
-    setBattleLog(`${chosen.name} נכנס לקרב!`);
-  }
+  const list = document.getElementById('switchPokemonList');
+  list.innerHTML = opts.map((p, i) => {
+    const hpPct = Math.max(0, p.currentHP / p.maxHP * 100);
+    const hpColor = hpPct > 50 ? '#4caf50' : hpPct > 25 ? '#ff9800' : '#f44336';
+    const types = (p.types||[]).map(t => `<span class="type-badge ${TYPE_COLORS[t]||''}" style="font-size:10px;padding:1px 6px">${t}</span>`).join('');
+    return `<button class="switch-pokemon-btn" onclick="doSwitchInBattle(${G.team.indexOf(p)}); closeOverlay('switchOverlay')">
+      <img src="${p.sprite}" alt="${p.name}">
+      <div class="switch-poke-info">
+        <div class="switch-poke-name">${p.name} ${types}</div>
+        <div class="switch-poke-level">רמה ${p.level}</div>
+        <div class="switch-poke-hp">${p.currentHP}/${p.maxHP} HP</div>
+        <div class="switch-hp-bar"><div class="switch-hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
+      </div>
+    </button>`;
+  }).join('');
+
+  showOverlay('switchOverlay');
+}
+
+function doSwitchInBattle(teamIdx) {
+  const chosen = G.team[teamIdx];
+  if (!chosen || chosen.currentHP <= 0) return;
+  document.getElementById('battlePlayerSprite').src = chosen.backSprite || chosen.sprite;
+  document.getElementById('battlePlayerName').textContent = chosen.name;
+  document.getElementById('battlePlayerLevel').textContent = 'רמה ' + chosen.level;
+  document.getElementById('battlePlayerTypes').innerHTML = (chosen.types||[]).map(t =>
+    `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
+  updateBattleHP('player', chosen);
+  setBattleLog(`${chosen.name} נכנס לקרב!`);
 }
 
 // ===== GYM SYSTEM =====
@@ -1911,8 +2459,22 @@ function giveXP(poke, amount) {
     if (poke.xp >= needed) {
       poke.level++;
       recalcStats(poke);
+      showLevelUpToast(poke);
     } else break;
   }
+}
+
+function showLevelUpToast(poke) {
+  const toast = document.getElementById('levelupToast');
+  document.getElementById('levelupPokeName').textContent = poke.name;
+  document.getElementById('levelupNumber').textContent = poke.level;
+  toast.classList.remove('hide');
+  toast.classList.add('show');
+  clearTimeout(toast._lvlTimer);
+  toast._lvlTimer = setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.classList.remove('show', 'hide'), 350);
+  }, 2000);
 }
 
 function recalcStats(poke) {
@@ -1972,22 +2534,47 @@ async function doEvolve(poke, evoData) {
   const oldSprite = poke.sprite;
   const newSprite = evoApiData.sprites.front_default;
 
-  // Show evolution screen
+  // Generate particles HTML
+  const particles = Array.from({length: 16}, (_, i) => {
+    const angle = (i / 16) * 360;
+    const dist = 60 + Math.random() * 60;
+    const tx = Math.cos(angle * Math.PI/180) * dist;
+    const ty = Math.sin(angle * Math.PI/180) * dist - 40;
+    const colors = ['#ffd700','#fff','#aaf','#f0f','#0ff'];
+    const color = colors[i % colors.length];
+    return `<div class="evo-particle" style="
+      left:50%; top:50%;
+      background:${color};
+      --tx:${tx}px; --ty:${ty}px;
+      --dur:${1.2 + Math.random()*0.8}s;
+      --delay:${Math.random()*0.5}s;
+    "></div>`;
+  }).join('');
+
   const content = document.getElementById('evolutionContent');
   content.innerHTML = `
-    <h2>✨ ${oldName} מתפתח! ✨</h2>
+    <div class="evo-title">✨ ${oldName} מתפתח! ✨</div>
     <div class="evolution-imgs">
-      <div class="evo-sprite"><img src="${oldSprite}" alt="${oldName}"></div>
-      <div class="evo-arrow">→</div>
-      <div class="evo-sprite"><img src="${newSprite}" alt="${evoData.name}"></div>
+      <div class="evo-particles">${particles}</div>
+      <div class="evo-sprite-wrap">
+        <div class="evo-sprite-old"><img src="${oldSprite}" alt="${oldName}"></div>
+        <span>${oldName}</span>
+      </div>
+      <div class="evo-arrow-wrap">
+        <div class="evo-arrow">→</div>
+      </div>
+      <div class="evo-sprite-wrap">
+        <div class="evo-sprite-new"><img src="${newSprite}" alt="${evoData.name}"></div>
+        <span>${evoData.name}</span>
+      </div>
     </div>
-    <div style="font-size:18px; color:var(--yellow); font-weight:900">${oldName} → ${evoData.name}!</div>`;
+    <div class="evo-name-reveal">🎉 ${evoData.name}!</div>
+    <div class="evo-subtitle">${oldName} התפתח!</div>`;
 
   showOverlay('evolutionOverlay');
-  await sleep(3000);
+  await sleep(4000);
   closeOverlay('evolutionOverlay');
 
-  // Update poke data
   poke.id = evoData.id;
   poke.name = evoData.name;
   poke.sprite = newSprite;
@@ -1996,7 +2583,6 @@ async function doEvolve(poke, evoData) {
   recalcStats(poke);
   saveGame();
   updateTeamPanel();
-  showToast(`${oldName} התפתח ל-${evoData.name}! 🎉`);
 }
 
 // ===== TEAM & PC =====
@@ -2168,6 +2754,149 @@ function shakeSprite(id) {
   const el = document.getElementById(id);
   el.classList.add('shake');
   setTimeout(() => el.classList.remove('shake'), 400);
+}
+
+// ===== POKEDEX =====
+let pokedexData = [];       // [{id, name}] all 1025
+let pokedexFilter = 'all';
+let pokedexSearchTerm = '';
+let pokedexLoaded = false;
+
+async function openPokedex() {
+  showOverlay('pokedexOverlay');
+  updatePokedexStats();
+
+  if (!pokedexLoaded) {
+    document.getElementById('pokedexLoading').style.display = 'block';
+    document.getElementById('pokedexGrid').innerHTML = '';
+    await loadPokedexList();
+    document.getElementById('pokedexLoading').style.display = 'none';
+    pokedexLoaded = true;
+  }
+  renderPokedexGrid();
+}
+
+async function loadPokedexList() {
+  try {
+    const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0');
+    const data = await res.json();
+    pokedexData = data.results.map((p, i) => ({ id: i + 1, name: p.name }));
+  } catch(e) {
+    showToast('שגיאה בטעינת הפוקדקס');
+  }
+}
+
+function updatePokedexStats() {
+  document.getElementById('pdexSeen').textContent = Object.keys(G.seen || {}).length;
+  document.getElementById('pdexCaught').textContent = Object.keys(G.caught || {}).length;
+}
+
+function renderPokedexGrid() {
+  const grid = document.getElementById('pokedexGrid');
+  const search = pokedexSearchTerm.toLowerCase();
+
+  let list = pokedexData;
+  if (search) list = list.filter(p => p.name.includes(search) || String(p.id).includes(search));
+  if (pokedexFilter === 'seen')   list = list.filter(p => G.seen[p.id]);
+  if (pokedexFilter === 'caught') list = list.filter(p => G.caught[p.id]);
+
+  grid.innerHTML = list.map(p => {
+    const isCaught = G.caught[p.id];
+    const isSeen   = G.seen[p.id];
+    const cls = isCaught ? 'caught' : isSeen ? 'seen' : 'unseen';
+    const icon = isCaught ? '⚾' : isSeen ? '👁️' : '';
+    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
+    return `<div class="pdex-item ${cls}" onclick="openPokedexDetail(${p.id})">
+      ${icon ? `<div class="pdex-status-icon">${icon}</div>` : ''}
+      <img class="pdex-sprite" src="${spriteUrl}" alt="${p.name}" loading="lazy">
+      <div class="pdex-num">#${String(p.id).padStart(3,'0')}</div>
+      <div class="pdex-name">${isSeen ? p.name : '???'}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterPokedex(val) {
+  pokedexSearchTerm = val;
+  renderPokedexGrid();
+}
+
+function setPokedexFilter(filter, btn) {
+  pokedexFilter = filter;
+  document.querySelectorAll('.pdex-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPokedexGrid();
+}
+
+async function openPokedexDetail(id) {
+  const isSeen   = !!G.seen[id];
+  const isCaught = !!G.caught[id];
+  const name = pokedexData.find(p => p.id === id)?.name || '???';
+
+  const content = document.getElementById('pdexDetailContent');
+  content.innerHTML = `
+    <div class="pdex-detail-header">
+      <button class="pdex-detail-close" onclick="closeOverlay('pokedexDetailOverlay')">✕</button>
+      <div class="pdex-detail-num">#${String(id).padStart(3,'0')}</div>
+      <div class="pdex-detail-sprite-wrap">
+        <img class="pdex-detail-sprite ${isSeen ? '' : 'unseen-detail'}"
+          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" alt="${name}">
+      </div>
+      <div class="pdex-detail-name ${isSeen ? '' : 'unseen-detail'}">${isSeen ? name : '???'}</div>
+      ${isCaught ? '<div class="pdex-caught-badge">⚾ נלכד!</div>' : isSeen ? '<div style="font-size:13px;color:var(--blue)">👁️ נראה</div>' : '<div style="font-size:13px;color:var(--text-muted)">לא נפגש עדיין</div>'}
+    </div>
+    <div class="pdex-detail-body" id="pdexDetailBody">
+      ${isSeen ? '<div style="text-align:center;color:var(--text-muted);padding:10px"><span class="loading-spinner"></span></div>' : 
+        '<div class="pdex-detail-desc">פגוש פוקימון זה כדי לחשוף מידע!</div>'}
+    </div>`;
+
+  showOverlay('pokedexDetailOverlay');
+
+  if (!isSeen) return;
+
+  try {
+    const apiData = await fetchPokemon(id);
+    const speciesRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+    const species = await speciesRes.json();
+
+    // Get Hebrew/English flavor text
+    const flavorEntry = species.flavor_text_entries.find(e => e.language.name === 'en');
+    const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f/g,' ').replace(/\n/g,' ') : '';
+
+    const types = apiData.types.map(t =>
+      `<span class="type-badge ${TYPE_COLORS[t.type.name]||''}">${t.type.name}</span>`).join(' ');
+
+    const statNames = { hp:'HP', attack:'התקפה', defense:'הגנה', 'special-attack':'התק׳ מיוחדת', 'special-defense':'הגנה מיוחדת', speed:'מהירות' };
+    const statsHTML = apiData.stats.map(s => {
+      const label = statNames[s.stat.name] || s.stat.name;
+      const pct = Math.min(100, s.base_stat / 255 * 100);
+      const color = s.base_stat >= 100 ? '#4caf50' : s.base_stat >= 60 ? '#2a75bb' : '#ff9800';
+      return `<div class="pdex-detail-stat">
+        <div class="pdex-detail-stat-label">${label}</div>
+        <div class="pdex-detail-stat-value">${s.base_stat}</div>
+        <div class="pdex-detail-bar-wrap"><div class="pdex-detail-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+
+    const height = (apiData.height / 10).toFixed(1);
+    const weight = (apiData.weight / 10).toFixed(1);
+
+    document.getElementById('pdexDetailBody').innerHTML = `
+      <div style="text-align:center;margin-bottom:12px">${types}</div>
+      <div class="pdex-detail-desc">${flavor}</div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px">
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--text-muted)">גובה</div>
+          <div style="font-size:16px;font-weight:700">${height}m</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--text-muted)">משקל</div>
+          <div style="font-size:16px;font-weight:700">${weight}kg</div>
+        </div>
+      </div>
+      <div class="pdex-detail-stats">${statsHTML}</div>`;
+  } catch(e) {
+    document.getElementById('pdexDetailBody').innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">שגיאה בטעינת נתונים</div>';
+  }
 }
 
 // Initial screen
