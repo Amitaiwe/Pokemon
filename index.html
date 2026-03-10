@@ -1390,6 +1390,198 @@ body {
   border: 1px solid rgba(255,255,255,0.2);
 }
 
+/* ===== POKEBALL THROW ANIMATION ===== */
+.pokeball-throw-overlay {
+  position: fixed; inset: 0; z-index: 9990;
+  pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.pokeball-throw-wrap {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px;
+}
+
+.pokeball-throw-svg {
+  width: 72px; height: 72px;
+  animation: pokeballThrow 0.5s ease-out forwards;
+  filter: drop-shadow(0 0 12px rgba(229,57,53,0.6));
+}
+
+@keyframes pokeballThrow {
+  0%   { transform: scale(0.4) translateY(80px) rotate(-180deg); opacity: 0.5; }
+  60%  { transform: scale(1.1) translateY(-8px) rotate(15deg); opacity: 1; }
+  100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+}
+
+.pokeball-shake {
+  animation: pokeballShake 0.4s ease-in-out;
+}
+@keyframes pokeballShake {
+  0%,100% { transform: rotate(0deg); }
+  25%  { transform: rotate(-18deg); }
+  75%  { transform: rotate(18deg); }
+}
+
+.pokeball-countdown {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 28px;
+  color: var(--yellow);
+  text-shadow: 0 0 20px rgba(245,197,24,0.8);
+  min-height: 40px;
+  animation: countPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes countPop {
+  from { transform: scale(0.3); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.pokeball-result {
+  font-size: 18px; font-weight: 900;
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 12px;
+  animation: resultFade 0.4s ease-out;
+}
+@keyframes resultFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pokeball-result.caught { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid #4caf50; }
+.pokeball-result.escaped { background: rgba(244,67,54,0.2); color: #f44336; border: 1px solid #f44336; }
+
+/* ===== FOUND POKEBALL POPUP ===== */
+.found-pokeball-popup {
+  position: fixed; inset: 0; z-index: 9992;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7);
+  animation: fadeIn 0.2s ease;
+}
+.found-pokeball-card {
+  background: var(--panel);
+  border: 2px solid var(--yellow);
+  border-radius: 20px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(245,197,24,0.3);
+  animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.found-pokeball-card svg { animation: foundSpin 1s ease-out; }
+@keyframes foundSpin {
+  from { transform: rotate(-180deg) scale(0.3); }
+  to   { transform: rotate(0deg) scale(1); }
+}
+.found-pokeball-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px; color: var(--yellow);
+  margin: 14px 0 6px;
+}
+.found-pokeball-sub { font-size: 14px; color: var(--text-muted); }
+.found-pokeball-count { font-size: 26px; font-weight: 900; margin-top: 8px; }
+
+/* ===== GYM BADGE WIN SCREEN ===== */
+.gym-win-overlay {
+  position: fixed; inset: 0; z-index: 9995;
+  background: radial-gradient(ellipse at center, #0a0a2e 0%, #000 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 0;
+}
+.gym-win-container {
+  text-align: center;
+  padding: 32px 24px;
+  max-width: 380px;
+  width: 100%;
+  position: relative;
+}
+.gym-win-confetti {
+  position: fixed; inset: 0; pointer-events: none; overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px; height: 10px;
+  top: -20px;
+  animation: confettiFall var(--dur,2s) var(--delay,0s) linear forwards;
+  border-radius: 2px;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.gym-win-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(10px, 2.5vw, 15px);
+  color: var(--yellow);
+  margin-bottom: 8px;
+  text-shadow: 0 0 20px rgba(245,197,24,0.8);
+  animation: titleFlicker 0.5s infinite alternate;
+}
+.gym-win-leader { font-size: 15px; color: var(--text-muted); margin-bottom: 20px; }
+.gym-win-badge-wrap {
+  position: relative;
+  width: 120px; height: 120px;
+  margin: 0 auto 20px;
+  display: flex; align-items: center; justify-content: center;
+}
+.gym-win-badge-glow {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  animation: badgeGlow 1s ease-in-out infinite alternate;
+}
+@keyframes badgeGlow {
+  from { box-shadow: 0 0 20px rgba(245,197,24,0.4); background: rgba(245,197,24,0.05); }
+  to   { box-shadow: 0 0 60px rgba(245,197,24,0.8), 0 0 100px rgba(245,197,24,0.3); background: rgba(245,197,24,0.1); }
+}
+.gym-win-badge-emoji {
+  font-size: 72px;
+  animation: badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;
+  display: block;
+}
+@keyframes badgePop {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.gym-win-badge-name {
+  font-size: 20px; font-weight: 900; color: white;
+  animation: nameReveal 0.4s ease-out 0.7s both;
+}
+.gym-win-badges-row {
+  display: flex; justify-content: center; gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  animation: nameReveal 0.4s ease-out 0.9s both;
+}
+.gym-win-badge-slot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.12);
+}
+.gym-win-badge-slot.earned {
+  background: rgba(245,197,24,0.15);
+  border-color: var(--yellow);
+  box-shadow: 0 0 12px rgba(245,197,24,0.4);
+}
+.gym-win-continue {
+  background: var(--yellow); color: #222;
+  border: none; border-radius: 14px;
+  padding: 14px 40px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 16px; font-weight: 900;
+  cursor: pointer;
+  margin-top: 20px;
+  animation: nameReveal 0.4s ease-out 1.1s both;
+  box-shadow: 0 4px 20px rgba(245,197,24,0.4);
+}
+.gym-win-continue:hover { transform: translateY(-2px); }
+
 </style>
 </head>
 <body>
@@ -1502,7 +1694,10 @@ body {
 
     <!-- post-battle actions -->
     <div class="battle-actions hidden" id="postBattleActions">
-      <button class="btn-battle btn-catch" onclick="tryToCatch()" id="btnCatch">⚾ תפוס!</button>
+      <button class="btn-battle btn-catch" onclick="tryToCatch()" id="btnCatch">
+        <svg viewBox="0 0 20 20" width="18" height="18" style="vertical-align:middle;margin-left:6px" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="white" stroke="#555" stroke-width="1.5"/><path d="M1 10 Q1 1 10 1 Q19 1 19 10" fill="#e53935"/><rect x="1" y="9.2" width="18" height="1.6" fill="#333"/><circle cx="10" cy="10" r="3" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="10" cy="10" r="1.5" fill="#ccc"/></svg>
+        תפוס!
+      </button>
       <button class="btn-battle btn-release" onclick="releaseForXP()">🌟 שחרר (קבל XP)</button>
     </div>
   </div>
@@ -1888,33 +2083,33 @@ function makePokemon(apiData, level) {
 
 const BASE_POKEMON_BY_TYPE = {
   fire: [
-    {id:4,name:'Charmander',rarity:'common'},{id:58,name:'Growlithe',rarity:'common'},
+    {id:4,name:'Charmander',rarity:'very_rare'},{id:58,name:'Growlithe',rarity:'common'},
     {id:77,name:'Ponyta',rarity:'common'},{id:126,name:'Magmar',rarity:'rare'},
-    {id:155,name:'Cyndaquil',rarity:'common'},{id:218,name:'Slugma',rarity:'common'},
-    {id:255,name:'Torchic',rarity:'common'},{id:228,name:'Houndour',rarity:'rare'},
+    {id:155,name:'Cyndaquil',rarity:'very_rare'},{id:218,name:'Slugma',rarity:'common'},
+    {id:255,name:'Torchic',rarity:'very_rare'},{id:228,name:'Houndour',rarity:'rare'},
     // Gen 4-9 fire starters & bases
     {id:390,name:'Chimchar',rarity:'common'},{id:467,name:'Magmortar',rarity:'very_rare'},
     {id:513,name:'Pansear',rarity:'rare'},{id:554,name:'Darumaka',rarity:'rare'},
     {id:607,name:'Litwick',rarity:'rare'},{id:636,name:'Larvesta',rarity:'very_rare'},
-    {id:653,name:'Fennekin',rarity:'common'},{id:725,name:'Litten',rarity:'common'},
-    {id:757,name:'Salandit',rarity:'rare'},{id:813,name:'Scorbunny',rarity:'common'},
+    {id:653,name:'Fennekin',rarity:'common'},{id:725,name:'Litten',rarity:'very_rare'},
+    {id:757,name:'Salandit',rarity:'rare'},{id:813,name:'Scorbunny',rarity:'very_rare'},
     {id:851,name:'Sizzlipede',rarity:'rare'}
   ],
   water: [
-    {id:7,name:'Squirtle',rarity:'common'},{id:54,name:'Psyduck',rarity:'common'},
+    {id:7,name:'Squirtle',rarity:'very_rare'},{id:54,name:'Psyduck',rarity:'common'},
     {id:60,name:'Poliwag',rarity:'common'},{id:72,name:'Tentacool',rarity:'common'},
     {id:79,name:'Slowpoke',rarity:'common'},{id:116,name:'Horsea',rarity:'rare'},
     {id:118,name:'Goldeen',rarity:'common'},{id:120,name:'Staryu',rarity:'rare'},
-    {id:158,name:'Totodile',rarity:'common'},{id:258,name:'Mudkip',rarity:'common'},
+    {id:158,name:'Totodile',rarity:'very_rare'},{id:258,name:'Mudkip',rarity:'very_rare'},
     {id:183,name:'Marill',rarity:'common'},{id:270,name:'Lotad',rarity:'rare'},
     {id:283,name:'Surskit',rarity:'rare'},
     // Gen 4+
-    {id:393,name:'Piplup',rarity:'common'},{id:418,name:'Buizel',rarity:'common'},
-    {id:489,name:'Phione',rarity:'very_rare'},{id:501,name:'Oshawott',rarity:'common'},
+    {id:393,name:'Piplup',rarity:'very_rare'},{id:418,name:'Buizel',rarity:'common'},
+    {id:489,name:'Phione',rarity:'very_rare'},{id:501,name:'Oshawott',rarity:'very_rare'},
     {id:515,name:'Panpour',rarity:'rare'},{id:535,name:'Tympole',rarity:'common'},
     {id:550,name:'Basculin',rarity:'rare'},{id:594,name:'Alomomola',rarity:'rare'},
-    {id:656,name:'Froakie',rarity:'common'},{id:692,name:'Clauncher',rarity:'rare'},
-    {id:728,name:'Popplio',rarity:'common'},{id:816,name:'Sobble',rarity:'common'},
+    {id:656,name:'Froakie',rarity:'very_rare'},{id:692,name:'Clauncher',rarity:'rare'},
+    {id:728,name:'Popplio',rarity:'very_rare'},{id:816,name:'Sobble',rarity:'very_rare'},
     {id:846,name:'Arrokuda',rarity:'common'}
   ],
   ice: [
@@ -2001,21 +2196,21 @@ const BASE_POKEMON_BY_TYPE = {
     {id:840,name:'Applin',rarity:'rare'}
   ],
   grass: [
-    {id:1,name:'Bulbasaur',rarity:'rare'},{id:43,name:'Oddish',rarity:'common'},
+    {id:1,name:'Bulbasaur',rarity:'very_rare'},{id:43,name:'Oddish',rarity:'common'},
     {id:69,name:'Bellsprout',rarity:'common'},{id:102,name:'Exeggcute',rarity:'rare'},
-    {id:114,name:'Tangela',rarity:'rare'},{id:152,name:'Chikorita',rarity:'common'},
-    {id:252,name:'Treecko',rarity:'common'},{id:273,name:'Seedot',rarity:'common'},
+    {id:114,name:'Tangela',rarity:'rare'},{id:152,name:'Chikorita',rarity:'very_rare'},
+    {id:252,name:'Treecko',rarity:'very_rare'},{id:273,name:'Seedot',rarity:'common'},
     {id:285,name:'Shroomish',rarity:'common'},{id:315,name:'Roselia',rarity:'rare'},
     // Gen 4+
-    {id:387,name:'Turtwig',rarity:'common'},{id:406,name:'Budew',rarity:'common'},
+    {id:387,name:'Turtwig',rarity:'very_rare'},{id:406,name:'Budew',rarity:'common'},
     {id:420,name:'Cherubi',rarity:'common'},{id:455,name:'Carnivine',rarity:'rare'},
-    {id:495,name:'Snivy',rarity:'common'},{id:511,name:'Pansage',rarity:'rare'},
+    {id:495,name:'Snivy',rarity:'very_rare'},{id:511,name:'Pansage',rarity:'rare'},
     {id:546,name:'Cottonee',rarity:'common'},{id:548,name:'Petilil',rarity:'common'},
     {id:556,name:'Maractus',rarity:'rare'},{id:590,name:'Foongus',rarity:'common'},
-    {id:650,name:'Chespin',rarity:'common'},{id:671,name:'Florges',rarity:'rare'},
+    {id:650,name:'Chespin',rarity:'very_rare'},{id:671,name:'Florges',rarity:'rare'},
     {id:673,name:'Gogoat',rarity:'rare'},{id:708,name:'Phantump',rarity:'rare'},
-    {id:722,name:'Rowlet',rarity:'common'},{id:753,name:'Fomantis',rarity:'rare'},
-    {id:755,name:'Morelull',rarity:'common'},{id:810,name:'Grookey',rarity:'common'},
+    {id:722,name:'Rowlet',rarity:'very_rare'},{id:753,name:'Fomantis',rarity:'rare'},
+    {id:755,name:'Morelull',rarity:'common'},{id:810,name:'Grookey',rarity:'very_rare'},
     {id:829,name:'Gossifleur',rarity:'common'},{id:840,name:'Applin',rarity:'rare'}
   ],
   ground: [
@@ -2120,7 +2315,7 @@ async function clickZone(idx) {
     G.pokeballs++;
     updateTopBar();
     saveGame();
-    showToast('🎉 מצאת כדור פוקימון! (יש לך ' + G.pokeballs + ')');
+    showFoundPokeballPopup();
     return;
   }
 
@@ -2137,6 +2332,25 @@ async function clickZone(idx) {
   }
 }
 
+const LEGENDARIES_BY_TYPE = {
+  fire:     [{id:250,name:'Ho-Oh',rarity:'legendary'},{id:146,name:'Moltres',rarity:'legendary'}],
+  water:    [{id:245,name:'Suicune',rarity:'legendary'},{id:382,name:'Kyogre',rarity:'legendary'}],
+  ice:      [{id:144,name:'Articuno',rarity:'legendary'}],
+  electric: [{id:145,name:'Zapdos',rarity:'legendary'},{id:243,name:'Raikou',rarity:'legendary'}],
+  psychic:  [{id:150,name:'Mewtwo',rarity:'legendary'},{id:251,name:'Celebi',rarity:'legendary'}],
+  dragon:   [{id:149,name:'Dragonite',rarity:'legendary'},{id:384,name:'Rayquaza',rarity:'legendary'}],
+  ghost:    [{id:249,name:'Lugia',rarity:'legendary'}],
+  dark:     [{id:248,name:'Tyranitar',rarity:'legendary'}],
+  ground:   [{id:383,name:'Groudon',rarity:'legendary'}],
+  rock:     [{id:377,name:'Regirock',rarity:'legendary'}],
+  fighting: [{id:244,name:'Entei',rarity:'legendary'}],
+  grass:    [{id:251,name:'Celebi',rarity:'legendary'}],
+  normal:   [{id:242,name:'Blissey',rarity:'legendary'}],
+  flying:   [{id:249,name:'Lugia',rarity:'legendary'},{id:381,name:'Latios',rarity:'legendary'}],
+  bug:      [{id:385,name:'Jirachi',rarity:'legendary'}],
+  poison:   [{id:317,name:'Swalot',rarity:'legendary'}]
+};
+
 function spawnPokemon(zoneTypes) {
   let pool = [];
   zoneTypes.forEach(t => {
@@ -2145,14 +2359,26 @@ function spawnPokemon(zoneTypes) {
   });
   if (!pool.length) return null;
 
-  // Weighted random by rarity
-  const weighted = [];
-  pool.forEach(p => {
-    const w = p.rarity === 'common' ? 70 : p.rarity === 'rare' ? 25 : 5;
-    for (let i = 0; i < w; i++) weighted.push(p);
-  });
+  // Weighted random: 65/25/8/2
+  const rand = Math.random() * 100;
+  let targetRarity;
+  if (rand < 2) {
+    // legendary — pick from zone legendaries
+    const legends = [];
+    zoneTypes.forEach(t => { (LEGENDARIES_BY_TYPE[t]||[]).forEach(l => { if (!legends.find(x=>x.id===l.id)) legends.push(l); }); });
+    if (legends.length) return legends[Math.floor(Math.random() * legends.length)];
+    targetRarity = 'very_rare';
+  } else if (rand < 10) {
+    targetRarity = 'very_rare';
+  } else if (rand < 35) {
+    targetRarity = 'rare';
+  } else {
+    targetRarity = 'common';
+  }
 
-  return weighted[Math.floor(Math.random() * weighted.length)];
+  const filtered = pool.filter(p => p.rarity === targetRarity);
+  const chosen = filtered.length ? filtered : pool; // fallback
+  return chosen[Math.floor(Math.random() * chosen.length)];
 }
 
 function randomEncounterLevel() {
@@ -2275,13 +2501,87 @@ function calcDamage(attacker, defender, type) {
 
 async function playerAttack(type) {
   if (!battleState) return;
-  setBattleButtonsEnabled(false);
+  if (battleState.isGym) {
+    await playerAttackGym(type);
+  } else {
+    await playerAttackWild(type);
+  }
+}
 
+// WILD BATTLE — fast auto-combat until one side faints or HP threshold
+async function playerAttackWild(type) {
+  setBattleButtonsEnabled(false);
+  let player = getActivePokemon();
+  if (!player) return;
+  const enemy = battleState.enemy;
+
+  // Run rounds until enemy at 0 or player at 0
+  while (enemy.currentHP > 0 && player && player.currentHP > 0) {
+    // Player hit
+    const result = calcDamage(player, enemy, type);
+    enemy.currentHP = Math.max(0, enemy.currentHP - result.dmg);
+    updateBattleHP('enemy', enemy);
+    shakeSprite('battleEnemySprite');
+
+    if (enemy.currentHP <= 0) break;
+
+    await sleep(180);
+
+    // Enemy hit
+    const physResult = calcDamage(enemy, player, 'physical');
+    const specResult = calcDamage(enemy, player, 'special');
+    const eResult = physResult.dmg >= specResult.dmg ? physResult : specResult;
+    player.currentHP = Math.max(0, player.currentHP - eResult.dmg);
+    updateBattleHP('player', player);
+    shakeSprite('battlePlayerSprite');
+
+    if (player.currentHP <= 0) break;
+
+    await sleep(180);
+    // Next round: enemy picks best type
+    const pR2 = calcDamage(player, enemy, 'physical');
+    const sR2 = calcDamage(player, enemy, 'special');
+    type = pR2.dmg >= sR2.dmg ? 'physical' : 'special';
+  }
+
+  await sleep(250);
+
+  if (enemy.currentHP <= 0) {
+    setBattleLog(`${enemy.name} הובס! 🎉`);
+    await sleep(400);
+    showPostBattleActions();
+  } else if (!player || player.currentHP <= 0) {
+    setBattleLog(`${player.name} הובס! 😞`);
+    await sleep(400);
+    const next = G.team.find(p => p.currentHP > 0 && p !== player);
+    if (next) {
+      battleState.player = next;
+      document.getElementById('battlePlayerSprite').src = next.backSprite || next.sprite;
+      document.getElementById('battlePlayerName').textContent = next.name;
+      document.getElementById('battlePlayerLevel').textContent = 'רמה ' + next.level;
+      document.getElementById('battlePlayerTypes').innerHTML = (next.types||[]).map(t =>
+        `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
+      updateBattleHP('player', next);
+      updateTeamPanel();
+      setBattleButtonsEnabled(true);
+    } else {
+      setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
+      healAllPokemon(); saveGame();
+      await sleep(1000);
+      closeAllOverlays(); battleState = null; updateTeamPanel();
+      showToast('💊 כל הפוקימונים התרפאו!');
+    }
+  }
+  saveGame();
+}
+
+// GYM BATTLE — slow turn-by-turn (original behavior)
+async function playerAttackGym(type) {
+  setBattleButtonsEnabled(false);
   const player = getActivePokemon();
   if (!player) return;
   const enemy = battleState.enemy;
 
-  // Player attacks
   const result = calcDamage(player, enemy, type);
   const dmg = result.dmg;
   enemy.currentHP = Math.max(0, enemy.currentHP - dmg);
@@ -2295,19 +2595,13 @@ async function playerAttack(type) {
   if (enemy.currentHP <= 0) {
     setBattleLog(`${enemy.name} הובס! 🎉`);
     await sleep(700);
-    if (battleState.isGym) {
-      handleGymEnemyFainted();
-    } else {
-      showPostBattleActions();
-    }
+    handleGymEnemyFainted();
     return;
   }
 
-  // Enemy attacks — choose best move considering type effectiveness
   const physResult = calcDamage(enemy, player, 'physical');
   const specResult = calcDamage(enemy, player, 'special');
-  const eAtk = physResult.dmg >= specResult.dmg ? 'physical' : 'special';
-  const eResult = eAtk === 'physical' ? physResult : specResult;
+  const eResult = physResult.dmg >= specResult.dmg ? physResult : specResult;
   const eDmg = eResult.dmg;
   player.currentHP = Math.max(0, player.currentHP - eDmg);
 
@@ -2320,7 +2614,6 @@ async function playerAttack(type) {
   if (player.currentHP <= 0) {
     setBattleLog(`${player.name} הובס! 😞`);
     await sleep(700);
-    // Try next Pokémon
     const next = G.team.find(p => p.currentHP > 0 && p !== player);
     if (next) {
       setBattleLog(`${next.name} נכנס לקרב!`);
@@ -2336,12 +2629,9 @@ async function playerAttack(type) {
       setBattleButtonsEnabled(true);
     } else {
       setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
-      healAllPokemon();
-      saveGame();
+      healAllPokemon(); saveGame();
       await sleep(1500);
-      closeAllOverlays();
-      battleState = null;
-      updateTeamPanel();
+      closeAllOverlays(); battleState = null; updateTeamPanel();
       showToast('💊 כל הפוקימונים התרפאו! המשך לשחק');
     }
   } else {
@@ -2355,47 +2645,88 @@ function showPostBattleActions() {
   document.getElementById('battleActions').classList.add('hidden');
   document.getElementById('postBattleActions').classList.remove('hidden');
   const btn = document.getElementById('btnCatch');
+  const pbSvg = `<svg viewBox="0 0 20 20" width="18" height="18" style="vertical-align:middle;margin-left:6px" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="white" stroke="#555" stroke-width="1.5"/><path d="M1 10 Q1 1 10 1 Q19 1 19 10" fill="#e53935"/><rect x="1" y="9.2" width="18" height="1.6" fill="#333"/><circle cx="10" cy="10" r="3" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="10" cy="10" r="1.5" fill="#ccc"/></svg>`;
   if (G.pokeballs <= 0) {
     btn.disabled = true;
-    btn.textContent = '⚾ אין כדורים';
+    btn.innerHTML = `${pbSvg} אין כדורים`;
   } else {
     btn.disabled = false;
-    btn.textContent = `⚾ תפוס! (${G.pokeballs} כדורים)`;
+    btn.innerHTML = `${pbSvg} תפוס! (${G.pokeballs})`;
   }
   catchAttempts = 0;
 }
+
+const POKEBALL_SVG = `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+  <circle cx="30" cy="30" r="28" fill="white" stroke="#333" stroke-width="3"/>
+  <path d="M2 30 Q2 2 30 2 Q58 2 58 30" fill="#e53935"/>
+  <rect x="2" y="27.5" width="56" height="5" fill="#333"/>
+  <circle cx="30" cy="30" r="10" fill="white" stroke="#333" stroke-width="3"/>
+  <circle cx="30" cy="30" r="5" fill="#eee" stroke="#999" stroke-width="1.5"/>
+</svg>`;
 
 async function tryToCatch() {
   if (!battleState || G.pokeballs <= 0) return;
   G.pokeballs--;
   updateTopBar();
   catchAttempts++;
+  document.getElementById('btnCatch').disabled = true;
 
+  const enemyName = battleState.enemy.name;
   const success = Math.random() < 0.5;
+
+  // Show pokeball throw overlay
+  const throwDiv = document.createElement('div');
+  throwDiv.className = 'pokeball-throw-overlay';
+  throwDiv.innerHTML = `
+    <div class="pokeball-throw-wrap">
+      <div id="pbThrowSvg" class="pokeball-throw-svg">${POKEBALL_SVG}</div>
+      <div class="pokeball-countdown" id="pbCountdown"></div>
+      <div id="pbResult"></div>
+    </div>`;
+  document.body.appendChild(throwDiv);
+
+  // Countdown 3,2,1 with shakes
+  for (let i = 3; i >= 1; i--) {
+    const cd = document.getElementById('pbCountdown');
+    if (cd) { cd.textContent = i; cd.style.animation = 'none'; void cd.offsetWidth; cd.style.animation = 'countPop 0.3s cubic-bezier(0.34,1.56,0.64,1)'; }
+    const svgEl = document.getElementById('pbThrowSvg');
+    if (svgEl) { svgEl.classList.add('pokeball-shake'); setTimeout(() => svgEl.classList.remove('pokeball-shake'), 400); }
+    await sleep(700);
+  }
+
+  const cd = document.getElementById('pbCountdown');
+  if (cd) cd.textContent = '';
+
+  const resEl = document.getElementById('pbResult');
   if (success) {
-    setBattleLog(`✅ ${battleState.enemy.name} נתפס!`);
+    if (resEl) { resEl.className = 'pokeball-result caught'; resEl.textContent = `✅ ${enemyName} נתפס!`; }
+    await sleep(1200);
+    throwDiv.remove();
+
     G.caught[battleState.enemy.id] = true;
     G.seen[battleState.enemy.id] = true;
     addToTeamOrPC(battleState.enemy);
-    healAllPokemon();
-    saveGame();
-    await sleep(1000);
-    closeAllOverlays();
-    updateTeamPanel();
-    showToast(`${battleState.enemy.name} נוסף לקבוצה שלך!`);
+    healAllPokemon(); saveGame();
+    closeAllOverlays(); updateTeamPanel();
+    showToast(`${enemyName} נוסף לקבוצה שלך!`);
     battleState = null;
   } else {
     if (catchAttempts >= 2) {
-      setBattleLog(`❌ ${battleState.enemy.name} ברח!`);
-      healAllPokemon();
-      saveGame();
-      await sleep(1000);
-      closeAllOverlays();
-      battleState = null;
+      if (resEl) { resEl.className = 'pokeball-result escaped'; resEl.textContent = `❌ ${enemyName} ברח!`; }
+      await sleep(1200);
+      throwDiv.remove();
+      healAllPokemon(); saveGame();
+      closeAllOverlays(); battleState = null;
     } else {
-      setBattleLog(`❌ ${battleState.enemy.name} נמלט מהכדור! ניסיון אחרון.`);
-      document.getElementById('btnCatch').textContent = `⚾ נסה שוב! (${G.pokeballs} כדורים)`;
-      if (G.pokeballs <= 0) document.getElementById('btnCatch').disabled = true;
+      if (resEl) { resEl.className = 'pokeball-result escaped'; resEl.textContent = `❌ נמלט! ניסיון אחרון`; }
+      await sleep(1200);
+      throwDiv.remove();
+      setBattleLog(`❌ ${enemyName} נמלט! ניסיון אחרון (${G.pokeballs} כדורים)`);
+      const btn = document.getElementById('btnCatch');
+      if (btn) {
+        btn.disabled = G.pokeballs <= 0;
+        btn.innerHTML = `<svg viewBox="0 0 20 20" width="18" height="18" style="vertical-align:middle;margin-left:6px" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="white" stroke="#555" stroke-width="1.5"/><path d="M1 10 Q1 1 10 1 Q19 1 19 10" fill="#e53935"/><rect x="1" y="9.2" width="18" height="1.6" fill="#333"/><circle cx="10" cy="10" r="3" fill="white" stroke="#333" stroke-width="1.5"/><circle cx="10" cy="10" r="1.5" fill="#ccc"/></svg> נסה שוב!`;
+      }
     }
   }
 }
@@ -2549,23 +2880,20 @@ async function handleGymEnemyFainted() {
 
   if (bs.gymPokeIndex >= bs.enemyTeam.length) {
     // Won the gym!
+    const wonGymIdx = G.gymProgress;
     G.gymProgress++;
     G.badges++;
     updateTopBar();
-    saveGame();
-    setBattleLog(`🏆 ניצחת את הג'ים! קיבלת את התג! 💊 הקבוצה התרפאה!`);
     healAllPokemon();
-    
-    // Give XP to team
-    const xpGain = 200 * bs.gymIndex;
+    const xpGain = 200 * (wonGymIdx + 1);
     G.team.forEach(p => { if (p.currentHP > 0) giveXP(p, xpGain); });
-    
-    await sleep(1500);
+    saveGame();
+    setBattleLog(`🏆 ניצחת את הג'ים! קיבלת את התג!`);
+    await sleep(800);
     closeAllOverlays();
-    updateTeamPanel();
-    showToast(`🏅 קיבלת תג ג'ים! (${G.badges}/8)`);
     battleState = null;
-    checkEvolutions();
+    updateTeamPanel();
+    showGymBadgeScreen(wonGymIdx, () => { checkEvolutions(); });
   } else {
     const nextEnemy = bs.enemyTeam[bs.gymPokeIndex];
     bs.enemy = nextEnemy;
@@ -2877,7 +3205,62 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), 2800);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+function showFoundPokeballPopup() {
+  const popup = document.createElement('div');
+  popup.className = 'found-pokeball-popup';
+  popup.innerHTML = `
+    <div class="found-pokeball-card">
+      <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+        <circle cx="30" cy="30" r="28" fill="white" stroke="#333" stroke-width="3"/>
+        <path d="M2 30 Q2 2 30 2 Q58 2 58 30" fill="#e53935"/>
+        <rect x="2" y="27.5" width="56" height="5" fill="#333"/>
+        <circle cx="30" cy="30" r="10" fill="white" stroke="#333" stroke-width="3"/>
+        <circle cx="30" cy="30" r="5" fill="#eee" stroke="#999" stroke-width="1.5"/>
+      </svg>
+      <div class="found-pokeball-title">מצאת כדור פוקימון!</div>
+      <div class="found-pokeball-sub">נוסף לאוסף שלך</div>
+      <div class="found-pokeball-count">יש לך ${G.pokeballs} כדורים</div>
+    </div>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click', () => popup.remove());
+  setTimeout(() => popup.remove(), 2500);
+}
+
+function showGymBadgeScreen(gymIdx, onDone) {
+  const leader = GYM_LEADERS[gymIdx];
+  const confettiColors = ['#ffd700','#ff6b6b','#4ecdc4','#45b7d1','#96ceb4','#ff9a9e','#a29bfe'];
+  const confetti = Array.from({length: 30}, (_, i) => {
+    const color = confettiColors[i % confettiColors.length];
+    const left = Math.random() * 100;
+    const dur = 1.8 + Math.random() * 1.2;
+    const delay = Math.random() * 0.8;
+    return `<div class="confetti-piece" style="left:${left}%;background:${color};--dur:${dur}s;--delay:${delay}s;${Math.random()>0.5?'border-radius:50%':''}"></div>`;
+  }).join('');
+
+  const allBadges = GYM_LEADERS.map((l, i) =>
+    `<div class="gym-win-badge-slot ${i < G.badges ? 'earned' : ''}">${i < G.badges ? l.badge : '○'}</div>`
+  ).join('');
+
+  const screen = document.createElement('div');
+  screen.className = 'gym-win-overlay';
+  screen.innerHTML = `
+    <div class="gym-win-confetti">${confetti}</div>
+    <div class="gym-win-container">
+      <div class="gym-win-title">🏆 ג'ים ${gymIdx + 1} נכבש!</div>
+      <div class="gym-win-leader">${leader.name} הובס!</div>
+      <div class="gym-win-badge-wrap">
+        <div class="gym-win-badge-glow"></div>
+        <span class="gym-win-badge-emoji">${leader.badge}</span>
+      </div>
+      <div class="gym-win-badge-name">תג ${leader.name}!</div>
+      <div class="gym-win-badges-row">${allBadges}</div>
+      <div style="font-size:13px;color:var(--text-muted)">תגים שנאספו: ${G.badges}/8</div>
+      <button class="gym-win-continue" onclick="this.closest('.gym-win-overlay').remove(); (${onDone.toString()})()">המשך ▶</button>
+    </div>`;
+  document.body.appendChild(screen);
 }
 
 function shakeSprite(id) {
