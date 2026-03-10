@@ -703,10 +703,32 @@ const FB_CONFIG = {
   databaseURL: "https://pokemon-5d710-default-rtdb.firebaseio.com"
 };
 
-const app = initializeApp(FB_CONFIG);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const provider = new GoogleAuthProvider();
+const fbApp  = initializeApp(FB_CONFIG);
+const fbAuth = getAuth(fbApp);
+const fbDb   = getDatabase(fbApp);
+
+window._fb = { auth:fbAuth, db:fbDb, ref, set, get, onValue,
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+  getRedirectResult, signOut, onAuthStateChanged };
+
+getRedirectResult(fbAuth).then(()=>{}).catch(e=>console.warn('redirect:',e.code));
+
+onAuthStateChanged(fbAuth, user => {
+  window._fbUser = user;
+  window._fbAuthResolved = true;
+  if (typeof window._onAuthReady === 'function') {
+    window._onAuthReady(user);
+  } else {
+    const wait = setInterval(() => {
+      if (typeof window._onAuthReady === 'function') {
+        clearInterval(wait); window._onAuthReady(user);
+      }
+    }, 50);
+  }
+});
+</script>
+
+<script>
 
 // ===== CONSTANTS =====
 const TRAINERS = {
@@ -812,50 +834,42 @@ function scheduleSave() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     if (currentUser && state) {
-      set(ref(db, `players/${currentUser.uid}`), state).catch(e => console.error('Save error', e));
+      window._fb.set(window._fb.ref(window._fb.db, `players/${currentUser.uid}`), state).catch(e => console.error('Save error', e));
     }
   }, 1000);
 }
 
 // ===== AUTH FLOW =====
 window.signInGoogle = async function() {
-  console.log('signInGoogle called, auth:', !!auth, 'provider:', !!provider);
+  if (!window._fb) { alert('Firebase לא זמין'); return; }
+  const prov = new window._fb.GoogleAuthProvider();
   try {
-    provider.setCustomParameters({ prompt: 'select_account' });
-    console.log('attempting signInWithPopup...');
-    await signInWithPopup(auth, provider);
-    console.log('popup success');
+    await window._fb.signInWithPopup(window._fb.auth, prov);
   } catch(e) {
-    console.error('popup error:', e.code, e.message);
-    if (e.code === 'auth/popup-blocked' || 
-        e.code === 'auth/operation-not-supported-in-this-environment' ||
-        e.code === 'auth/popup-closed-by-user') {
-      try {
-        console.log('trying redirect...');
-        await signInWithRedirect(auth, provider);
-      } catch(e2) { alert('שגיאה: ' + e2.code + ' - ' + e2.message); }
-    } else {
-      alert('שגיאה: ' + e.code + '\n' + e.message);
+    if (e.code==='auth/popup-blocked' || 
+        e.code==='auth/operation-not-supported-in-this-environment' || 
+        e.code==='auth/popup-closed-by-user') {
+      try { await window._fb.signInWithRedirect(window._fb.auth, prov); }
+      catch(e2) { alert('שגיאה: ' + e2.code); }
+    } else { 
+      alert('שגיאה: ' + e.code + ' ' + e.message); 
     }
   }
 };
 
-onAuthStateChanged(auth, async (user) => {
+window._onAuthReady = async function(user) {
+  currentUser = user;
   if (user) {
-    currentUser = user;
     document.getElementById('loading-status').textContent = 'טוען שמירה...';
     await loadOrInitPlayer(user);
   } else {
-    try {
-      const result = await getRedirectResult(auth);
-      if (result && result.user) return;
-    } catch(e) { console.error('redirect error', e); }
     showScreen('screen-auth');
   }
-});
+};
+
 
 async function loadOrInitPlayer(user) {
-  const snap = await get(ref(db, `players/${user.uid}`));
+  const snap = await window._fb.get(window._fb.ref(window._fb.db, `players/${user.uid}`));
   if (snap.exists()) {
     state = snap.val();
     // migrate old saves
@@ -927,7 +941,7 @@ window.startGame = async function() {
     wins: 0,
     caught: 1,
   };
-  await set(ref(db, `players/${currentUser.uid}`), state);
+  await window._fb.set(window._fb.ref(window._fb.db, `players/${currentUser.uid}`), state);
   initWorld();
   showScreen('screen-world');
 };
