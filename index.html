@@ -291,13 +291,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 16px;
+  padding: 4px;
 }
 
 .world-map {
   position: relative;
   width: 100%;
-  max-width: 900px;
+  max-width: 100%;
 }
 
 .map-bg {
@@ -1193,6 +1193,9 @@ function loadGame() {
       G.pokeballs = data.pokeballs != null ? data.pokeballs : 5;
       G.gymProgress = data.gymProgress || 0;
       G.badges = data.badges || 0;
+      // רטרואקטיבי — תמיד HP מלא בטעינה
+      healAllPokemon();
+      saveGame();
       enterGameScreen();
     } else {
       buildSetupScreen();
@@ -1289,7 +1292,6 @@ function buildZoneGrid() {
   ];
   grid.innerHTML = ordered.map((z, i) => `
     <div class="zone" onclick="clickZone(${i})" title="${z.name}">
-      <div class="zone-label">${z.emoji} ${z.name}</div>
     </div>`).join('');
 }
 
