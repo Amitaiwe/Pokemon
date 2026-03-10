@@ -689,7 +689,7 @@
 <!-- Firebase + Game Logic -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const FB_CONFIG = {
@@ -818,8 +818,17 @@ function scheduleSave() {
 
 // ===== AUTH FLOW =====
 window.signInGoogle = async function() {
-  try { await signInWithRedirect(auth, provider); }
-  catch(e) { alert('התחברות נכשלה: ' + e.message); }
+  try {
+    provider.setCustomParameters({ prompt: 'select_account' });
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    if (e.code === 'auth/popup-blocked') {
+      // fallback to redirect
+      await signInWithRedirect(auth, provider);
+    } else {
+      alert('התחברות נכשלה: ' + e.code + ' ' + e.message);
+    }
+  }
 };
 
 onAuthStateChanged(auth, async (user) => {
