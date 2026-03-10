@@ -1582,6 +1582,200 @@ body {
 }
 .gym-win-continue:hover { transform: translateY(-2px); }
 
+/* ===== CHAIN COUNTER ===== */
+.chain-counter {
+  background: linear-gradient(135deg, #ff6b35, #ff3d00);
+  color: white;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-weight: 900;
+  font-size: 15px;
+  box-shadow: 0 2px 12px rgba(255,80,0,0.5);
+  animation: chainPulse 1s ease-in-out infinite alternate;
+}
+@keyframes chainPulse {
+  from { box-shadow: 0 2px 8px rgba(255,80,0,0.4); }
+  to   { box-shadow: 0 2px 20px rgba(255,80,0,0.9); }
+}
+
+/* ===== ELITE FOUR BUTTON ===== */
+.btn-elite-four {
+  background: linear-gradient(135deg, #7b2d8b, #4a0080);
+  color: #ffd700;
+  border: 1px solid #ffd700;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-family: 'Heebo', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(123,45,139,0.6);
+  animation: elitePulse 2s ease-in-out infinite alternate;
+}
+@keyframes elitePulse {
+  from { box-shadow: 0 0 10px rgba(123,45,139,0.5); }
+  to   { box-shadow: 0 0 25px rgba(255,215,0,0.5), 0 0 40px rgba(123,45,139,0.5); }
+}
+
+/* ===== STATS OVERLAY ===== */
+.stats-container {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  position: relative;
+  padding: 20px;
+}
+.stats-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: var(--yellow);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.stats-section { margin-bottom: 16px; }
+.stats-section-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stats-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.stats-card-value { font-size: 24px; font-weight: 900; color: var(--yellow); }
+.stats-card-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.stats-badges-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.stats-badge-slot {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.stats-badge-slot.earned {
+  background: rgba(245,197,24,0.1);
+  border-color: var(--yellow);
+  box-shadow: 0 0 10px rgba(245,197,24,0.3);
+}
+.stats-elite-done {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(123,45,139,0.3), rgba(74,0,128,0.3));
+  border: 1px solid #ffd700;
+  border-radius: 12px;
+  padding: 10px;
+  color: #ffd700;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+/* ===== LEADERBOARD ===== */
+.leaderboard-container {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.leaderboard-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 2;
+}
+.leaderboard-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--yellow);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.leaderboard-list { padding: 10px; }
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.lb-row:hover { border-color: var(--yellow); background: rgba(245,197,24,0.06); }
+.lb-row.me { border-color: var(--blue); background: rgba(42,117,187,0.1); }
+.lb-rank { font-size: 18px; font-weight: 900; min-width: 28px; text-align: center; }
+.lb-rank.gold   { color: #ffd700; }
+.lb-rank.silver { color: #c0c0c0; }
+.lb-rank.bronze { color: #cd7f32; }
+.lb-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); }
+.lb-info { flex: 1; }
+.lb-name { font-size: 14px; font-weight: 700; }
+.lb-badges { font-size: 11px; color: var(--text-muted); }
+.lb-elite { font-size: 10px; color: #ffd700; }
+.lb-team { display: flex; gap: 2px; }
+.lb-team img { width: 28px; height: 28px; image-rendering: pixelated; }
+.lb-score { font-size: 18px; font-weight: 900; color: var(--yellow); text-align: center; }
+.lb-score-label { font-size: 9px; color: var(--text-muted); }
+
+/* ===== ELITE FOUR SCREEN ===== */
+.elite-container {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  position: relative;
+  padding: 20px;
+}
+.elite-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #ffd700;
+  text-align: center;
+  margin-bottom: 6px;
+  text-shadow: 0 0 15px rgba(255,215,0,0.6);
+}
+.elite-subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+.elite-trainers { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.elite-trainer-row {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.elite-trainer-row.defeated { border-color: rgba(76,175,80,0.5); background: rgba(76,175,80,0.07); }
+.elite-trainer-row.current { border-color: #ffd700; background: rgba(255,215,0,0.07); animation: chainPulse 1s infinite alternate; }
+.elite-trainer-icon { font-size: 32px; }
+.elite-trainer-info { flex: 1; }
+.elite-trainer-name { font-size: 15px; font-weight: 900; }
+.elite-trainer-level { font-size: 12px; color: var(--text-muted); }
+.elite-trainer-status { font-size: 12px; }
+
 </style>
 </head>
 <body>
@@ -1627,6 +1821,7 @@ body {
     </div>
     <div class="top-bar-title">PokéMon ForEveR</div>
     <div class="top-bar-actions">
+      <button class="btn-small" onclick="openStats()">📊 סטטס</button>
       <button class="btn-small" onclick="openPokedex()">📖 פוקדקס</button>
       <button class="btn-small" onclick="openPC()">💻 PC</button>
       <button class="btn-small" onclick="signOut()">יציאה</button>
@@ -1653,7 +1848,9 @@ body {
       <div class="pokeball-icon"></div>
       <span id="pokeballCount">5</span> כדורים
     </div>
-    <button class="btn-gym" onclick="openGymScreen()">🏟️ ג'ים <span id="gymNumber">1</span></button>
+    <div id="chainCounter" class="chain-counter" style="display:none">🔥 <span id="chainCount">0</span></div>
+    <button class="btn-gym" onclick="openGymScreen()" id="btnGym">🏟️ ג'ים <span id="gymNumber">1</span></button>
+    <button class="btn-elite-four" onclick="openEliteFour()" id="btnEliteFour" style="display:none">👑 Elite Four</button>
   </div>
 </div>
 
@@ -1757,6 +1954,38 @@ body {
 <!-- POKEDEX DETAIL OVERLAY -->
 <div class="overlay" id="pokedexDetailOverlay">
   <div class="pdex-detail-container" id="pdexDetailContent"></div>
+</div>
+
+<!-- STATS OVERLAY -->
+<div class="overlay" id="statsOverlay">
+  <div class="stats-container" id="statsContent">
+    <button class="pc-close" onclick="closeOverlay('statsOverlay')">✕</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD OVERLAY -->
+<div class="overlay" id="leaderboardOverlay">
+  <div class="leaderboard-container">
+    <div class="leaderboard-header">
+      <div class="leaderboard-title">🏆 לוח שחקנים</div>
+      <button class="pc-close" onclick="closeOverlay('leaderboardOverlay')" style="top:14px">✕</button>
+    </div>
+    <div class="leaderboard-list" id="leaderboardList">
+      <div style="text-align:center;padding:20px;color:var(--text-muted)"><span class="loading-spinner"></span> טוען...</div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD TEAM POPUP -->
+<div class="overlay" id="lbTeamOverlay">
+  <div class="switch-popup" id="lbTeamContent" style="max-width:340px"></div>
+</div>
+
+<!-- ELITE FOUR OVERLAY -->
+<div class="overlay" id="eliteOverlay">
+  <div class="elite-container" id="eliteContent">
+    <button class="pc-close" onclick="closeOverlay('eliteOverlay')">✕</button>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -1869,8 +2098,16 @@ let G = {
   pokeballs: 5,
   gymProgress: 0,
   badges: 0,
-  seen: {},    // {pokemonId: true}
-  caught: {}   // {pokemonId: true}
+  seen: {},
+  caught: {},
+  chain: 0,          // win streak counter
+  eliteFourDone: false,
+  stats: {
+    battlesWon: 0,
+    battlesLost: 0,
+    pokemonCaught: 0,
+    stepsWalked: 0
+  }
 };
 
 let currentUser = null;
@@ -1910,7 +2147,10 @@ function saveGame() {
     gymProgress: G.gymProgress,
     badges: G.badges,
     seen: G.seen || {},
-    caught: G.caught || {}
+    caught: G.caught || {},
+    chain: G.chain || 0,
+    eliteFourDone: G.eliteFourDone || false,
+    stats: G.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0, stepsWalked:0 }
   };
   db.ref('players/' + G.uid).set(data);
 }
@@ -1927,11 +2167,10 @@ function loadGame() {
       G.badges = data.badges || 0;
       G.seen = data.seen || {};
       G.caught = data.caught || {};
-      // retroactively mark team+pc as caught/seen
-      [...G.team, ...G.pc].forEach(p => {
-        G.seen[p.id] = true;
-        G.caught[p.id] = true;
-      });
+      G.chain = data.chain || 0;
+      G.eliteFourDone = data.eliteFourDone || false;
+      G.stats = data.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0, stepsWalked:0 };
+      [...G.team, ...G.pc].forEach(p => { G.seen[p.id] = true; G.caught[p.id] = true; });
       healAllPokemon();
       saveGame();
       enterGameScreen();
@@ -2018,6 +2257,29 @@ function updateTopBar() {
   document.getElementById('gymBadgeCount').textContent = G.badges;
   document.getElementById('gymNumber').textContent = Math.min(G.gymProgress + 1, 8);
   document.getElementById('pokeballCount').textContent = G.pokeballs;
+
+  // Chain counter
+  const chainEl = document.getElementById('chainCounter');
+  const chainCount = document.getElementById('chainCount');
+  if (G.chain >= 3) {
+    chainEl.style.display = 'flex';
+    const mult = G.chain >= 10 ? 'x3' : G.chain >= 5 ? 'x2' : 'x1.5';
+    chainCount.textContent = `${G.chain} (${mult} XP)`;
+  } else {
+    chainEl.style.display = 'none';
+  }
+
+  // Show Elite Four button after 8 badges
+  const eliteBtn = document.getElementById('btnEliteFour');
+  const gymBtn = document.getElementById('btnGym');
+  if (G.badges >= 8) {
+    eliteBtn.style.display = 'block';
+    gymBtn.style.display = 'none';
+  } else {
+    eliteBtn.style.display = 'none';
+    gymBtn.style.display = 'block';
+    document.getElementById('gymNumber').textContent = Math.min(G.gymProgress + 1, 8);
+  }
 }
 
 // ===== ZONE GRID =====
@@ -2123,10 +2385,10 @@ const BASE_POKEMON_BY_TYPE = {
     {id:712,name:'Bergmite',rarity:'common'},{id:872,name:'Snom',rarity:'common'}
   ],
   electric: [
-    {id:25,name:'Pikachu',rarity:'rare'},{id:100,name:'Voltorb',rarity:'common'},
-    {id:125,name:'Electabuzz',rarity:'rare'},{id:170,name:'Chinchou',rarity:'common'},
-    {id:172,name:'Pichu',rarity:'rare'},{id:179,name:'Mareep',rarity:'common'},
-    {id:239,name:'Elekid',rarity:'very_rare'},
+    {id:25,name:'Pikachu',rarity:'rare'},{id:81,name:'Magnemite',rarity:'common'},
+    {id:100,name:'Voltorb',rarity:'common'},{id:125,name:'Electabuzz',rarity:'rare'},
+    {id:170,name:'Chinchou',rarity:'common'},{id:172,name:'Pichu',rarity:'rare'},
+    {id:179,name:'Mareep',rarity:'common'},{id:239,name:'Elekid',rarity:'very_rare'},
     // Gen 4+
     {id:309,name:'Electrike',rarity:'common'},{id:403,name:'Shinx',rarity:'common'},
     {id:417,name:'Pachirisu',rarity:'rare'},{id:479,name:'Rotom',rarity:'very_rare'},
@@ -2228,6 +2490,7 @@ const BASE_POKEMON_BY_TYPE = {
     {id:16,name:'Pidgey',rarity:'common'},{id:19,name:'Rattata',rarity:'common'},
     {id:39,name:'Jigglypuff',rarity:'common'},{id:52,name:'Meowth',rarity:'common'},
     {id:113,name:'Chansey',rarity:'very_rare'},{id:128,name:'Tauros',rarity:'rare'},
+    {id:129,name:'Magikarp',rarity:'common'},{id:133,name:'Eevee',rarity:'very_rare'},
     {id:143,name:'Snorlax',rarity:'very_rare'},{id:161,name:'Sentret',rarity:'common'},
     {id:190,name:'Aipom',rarity:'rare'},{id:234,name:'Stantler',rarity:'rare'},
     // Gen 3+
@@ -2547,10 +2810,25 @@ async function playerAttackWild(type) {
   await sleep(250);
 
   if (enemy.currentHP <= 0) {
+    // Win — increment chain
+    G.chain++;
+    G.stats = G.stats || {};
+    G.stats.battlesWon = (G.stats.battlesWon || 0) + 1;
+    updateTopBar();
+    const chainMult = G.chain >= 10 ? 3 : G.chain >= 5 ? 2 : G.chain >= 3 ? 1.5 : 1;
+    if (chainMult > 1) {
+      const msg = G.chain >= 10 ? `🔥🔥🔥 שרשרת x${G.chain}! XP x3!` : G.chain >= 5 ? `🔥🔥 שרשרת x${G.chain}! XP x2!` : `🔥 שרשרת x${G.chain}! XP x1.5!`;
+      showToast(msg);
+    }
     setBattleLog(`${enemy.name} הובס! 🎉`);
     await sleep(400);
     showPostBattleActions();
   } else if (!player || player.currentHP <= 0) {
+    // Loss — break chain
+    G.chain = 0;
+    G.stats = G.stats || {};
+    G.stats.battlesLost = (G.stats.battlesLost || 0) + 1;
+    updateTopBar();
     setBattleLog(`${player.name} הובס! 😞`);
     await sleep(400);
     const next = G.team.find(p => p.currentHP > 0 && p !== player);
@@ -2567,7 +2845,7 @@ async function playerAttackWild(type) {
     } else {
       setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
       healAllPokemon(); saveGame();
-      await sleep(1000);
+      await sleep(500);
       closeAllOverlays(); battleState = null; updateTeamPanel();
       showToast('💊 כל הפוקימונים התרפאו!');
     }
@@ -2595,7 +2873,11 @@ async function playerAttackGym(type) {
   if (enemy.currentHP <= 0) {
     setBattleLog(`${enemy.name} הובס! 🎉`);
     await sleep(700);
-    handleGymEnemyFainted();
+    if (battleState.isElite) {
+      handleEliteEnemyFainted();
+    } else {
+      handleGymEnemyFainted();
+    }
     return;
   }
 
@@ -2628,11 +2910,15 @@ async function playerAttackGym(type) {
       updateTeamPanel();
       setBattleButtonsEnabled(true);
     } else {
+      G.chain = 0;
+      G.stats = G.stats || {};
+      G.stats.battlesLost = (G.stats.battlesLost || 0) + 1;
+      updateTopBar();
       setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
       healAllPokemon(); saveGame();
-      await sleep(1500);
+      await sleep(250);
       closeAllOverlays(); battleState = null; updateTeamPanel();
-      showToast('💊 כל הפוקימונים התרפאו! המשך לשחק');
+      showToast('💊 כל הפוקימונים התרפאו!');
     }
   } else {
     updateTeamPanel();
@@ -2705,6 +2991,8 @@ async function tryToCatch() {
 
     G.caught[battleState.enemy.id] = true;
     G.seen[battleState.enemy.id] = true;
+    G.stats = G.stats || {};
+    G.stats.pokemonCaught = (G.stats.pokemonCaught || 0) + 1;
     addToTeamOrPC(battleState.enemy);
     healAllPokemon(); saveGame();
     closeAllOverlays(); updateTeamPanel();
@@ -2734,7 +3022,9 @@ async function tryToCatch() {
 function releaseForXP() {
   if (!battleState) return;
   const enemy = battleState.enemy;
-  const xpGain = enemy.attack + enemy.spAttack;
+  const chainMult = G.chain >= 10 ? 3 : G.chain >= 5 ? 2 : G.chain >= 3 ? 1.5 : 1;
+  const baseXP = enemy.attack + enemy.spAttack;
+  const xpGain = Math.floor(baseXP * chainMult);
   const active = getActivePokemon();
 
   G.team.forEach(p => {
@@ -2743,7 +3033,8 @@ function releaseForXP() {
     giveXP(p, gain);
   });
 
-  setBattleLog(`${enemy.name} שוחרר. קיבלת ${xpGain} נקודות ניסיון! 🌟`);
+  const multStr = chainMult > 1 ? ` (x${chainMult} שרשרת!)` : '';
+  setBattleLog(`${enemy.name} שוחרר. קיבלת ${xpGain} XP!${multStr} 🌟`);
   healAllPokemon();
   saveGame();
 
@@ -2761,6 +3052,8 @@ function healAllPokemon() {
 }
 
 function runFromBattle() {
+  G.chain = 0;
+  updateTopBar();
   setBattleLog('ברחת מהקרב!');
   setTimeout(() => { closeAllOverlays(); battleState = null; }, 800);
 }
@@ -3418,6 +3711,313 @@ async function openPokedexDetail(id) {
     document.getElementById('pdexDetailBody').innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px">שגיאה בטעינת נתונים</div>';
   }
 }
+
+// ===== ELITE FOUR =====
+const ELITE_FOUR = [
+  {
+    name: 'Lorelei', icon: '🧊', level: 85,
+    pokemon: ['lapras','cloyster','slowbro','jynx','dewgong','starmie']
+  },
+  {
+    name: 'Bruno', icon: '🥊', level: 88,
+    pokemon: ['onix','hitmonchan','hitmonlee','machamp','primeape','poliwrath']
+  },
+  {
+    name: 'Lance', icon: '🐉', level: 92,
+    pokemon: ['dragonite','dragonair','gyarados','aerodactyl','charizard','kingdra']
+  },
+  {
+    name: 'Amitai', icon: '👑', level: 95,
+    pokemon: ['mewtwo','tyranitar','salamence','garchomp','lucario','togekiss']
+  }
+];
+
+let eliteState = null; // {trainerIdx, battle in progress via battleState}
+
+function openEliteFour() {
+  if (G.badges < 8) { showToast('צריך 8 תגים כדי להיכנס!'); return; }
+  buildEliteScreen();
+  showOverlay('eliteOverlay');
+}
+
+function buildEliteScreen() {
+  const content = document.getElementById('eliteContent');
+  const trainers = ELITE_FOUR.map((t, i) => {
+    const beaten = eliteState && i < (eliteState.trainerIdx || 0);
+    const isCurrent = eliteState && i === eliteState.trainerIdx;
+    const locked = eliteState ? i > eliteState.trainerIdx : i > 0;
+    const cls = beaten ? 'defeated' : isCurrent ? 'current' : '';
+    const status = beaten ? '✅ הובס' : isCurrent ? '⚔️ הבא' : locked ? '🔒' : '';
+    return `<div class="elite-trainer-row ${cls}">
+      <div class="elite-trainer-icon">${t.icon}</div>
+      <div class="elite-trainer-info">
+        <div class="elite-trainer-name">${t.name}</div>
+        <div class="elite-trainer-level">רמה ${t.level} | ${t.pokemon.length} פוקימונים</div>
+      </div>
+      <div class="elite-trainer-status">${status}</div>
+    </div>`;
+  }).join('');
+
+  const progress = eliteState ? eliteState.trainerIdx : 0;
+  const canStart = !eliteState || eliteState.trainerIdx < 4;
+
+  content.innerHTML = `
+    <button class="pc-close" onclick="closeOverlay('eliteOverlay')">✕</button>
+    <div class="elite-title">👑 ELITE FOUR</div>
+    <div class="elite-subtitle">4 מאמני האליטה + האלוף Amitai</div>
+    <div class="elite-trainers">${trainers}</div>
+    ${G.eliteFourDone ? '<div class="stats-elite-done">🏆 השלמת את ה-Elite Four!</div>' : ''}
+    ${canStart && !G.eliteFourDone ? `<button class="gym-win-continue" style="width:100%" onclick="startEliteFourBattle()">
+      ${progress === 0 ? '⚔️ התחל!' : `⚔️ המשך נגד ${ELITE_FOUR[progress].name}`}
+    </button>` : ''}
+    ${G.eliteFourDone ? `<button class="gym-win-continue" style="width:100%;background:#555;margin-top:8px" onclick="resetEliteFour()">↩️ שחק שוב</button>` : ''}`;
+}
+
+async function startEliteFourBattle() {
+  if (!eliteState) eliteState = { trainerIdx: 0 };
+  const trainerIdx = eliteState.trainerIdx;
+  if (trainerIdx >= ELITE_FOUR.length) return;
+
+  const trainer = ELITE_FOUR[trainerIdx];
+  closeOverlay('eliteOverlay');
+
+  // Build gym-style team
+  const gymTeam = [];
+  for (const name of trainer.pokemon) {
+    try {
+      const apiData = await fetchPokemon(name);
+      const p = makePokemon(apiData, trainer.level + Math.floor(Math.random() * 4));
+      gymTeam.push(p);
+    } catch(e) {}
+  }
+  if (!gymTeam.length) { showToast('שגיאה בטעינת הקרב'); return; }
+
+  const active = getActivePokemon();
+  if (!active) { showToast('כל הפוקימונים הובסו!'); return; }
+
+  battleState = {
+    enemy: gymTeam[0],
+    player: active,
+    isGym: false,
+    isElite: true,
+    eliteTrainerIdx: trainerIdx,
+    gymPokeIndex: 0,
+    enemyTeam: gymTeam,
+    gymIndex: trainerIdx,
+    catchAttempts: 0
+  };
+
+  setupBattleUI(active, gymTeam[0]);
+  // Hide catch/release for Elite Four
+  document.getElementById('postBattleActions').classList.add('hidden');
+  showOverlay('battleOverlay');
+  document.getElementById('battleActions').classList.remove('hidden');
+  setBattleLog(`⚔️ ${trainer.name} ${trainer.icon} שלח את ${gymTeam[0].name}!`);
+}
+
+async function handleEliteEnemyFainted() {
+  const bs = battleState;
+  bs.gymPokeIndex++;
+  if (bs.gymPokeIndex >= bs.enemyTeam.length) {
+    // Trainer beaten
+    eliteState.trainerIdx++;
+    const beaten = ELITE_FOUR[bs.eliteTrainerIdx];
+    setBattleLog(`🎉 ${beaten.name} הובס!`);
+
+    if (eliteState.trainerIdx >= ELITE_FOUR.length) {
+      // ALL DONE
+      G.eliteFourDone = true;
+      saveGame();
+      await sleep(600);
+      closeAllOverlays();
+      battleState = null;
+      eliteState = null;
+      updateTeamPanel();
+      showEliteFourWinScreen();
+    } else {
+      healAllPokemon();
+      await sleep(800);
+      closeAllOverlays();
+      battleState = null;
+      updateTeamPanel();
+      const next = ELITE_FOUR[eliteState.trainerIdx];
+      showToast(`✅ ${beaten.name} הובס! הבא: ${next.name} ${next.icon}`);
+      buildEliteScreen();
+      showOverlay('eliteOverlay');
+    }
+  } else {
+    const nextEnemy = bs.enemyTeam[bs.gymPokeIndex];
+    bs.enemy = nextEnemy;
+    setBattleLog(`${ELITE_FOUR[bs.eliteTrainerIdx].name} שלח את ${nextEnemy.name}!`);
+    await sleep(500);
+    document.getElementById('battleEnemySprite').src = nextEnemy.sprite;
+    document.getElementById('battleEnemyName').textContent = nextEnemy.name;
+    document.getElementById('battleEnemyLevel').textContent = 'רמה ' + nextEnemy.level;
+    updateBattleHP('enemy', nextEnemy);
+    setBattleButtonsEnabled(true);
+  }
+}
+
+function showEliteFourWinScreen() {
+  const screen = document.createElement('div');
+  screen.className = 'gym-win-overlay';
+  const confettiColors = ['#ffd700','#ff6b6b','#4ecdc4','#a29bfe','#fd79a8'];
+  const confetti = Array.from({length: 40}, (_, i) => {
+    const color = confettiColors[i % confettiColors.length];
+    return `<div class="confetti-piece" style="left:${Math.random()*100}%;background:${color};--dur:${1.5+Math.random()*1.5}s;--delay:${Math.random()*0.6}s;${Math.random()>0.5?'border-radius:50%':''}"></div>`;
+  }).join('');
+  screen.innerHTML = `
+    <div class="gym-win-confetti">${confetti}</div>
+    <div class="gym-win-container">
+      <div class="gym-win-title">🏆 אלוף!</div>
+      <div class="gym-win-leader" style="font-size:16px;color:var(--yellow)">השלמת את ה-Elite Four!</div>
+      <div style="font-size:72px;animation:badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;display:block;margin:16px 0">👑</div>
+      <div class="gym-win-badge-name" style="color:#ffd700">האלוף של PokéMon ForEveR!</div>
+      <div style="font-size:13px;color:var(--text-muted);margin:10px 0">ניצחת את Amitai עצמו!</div>
+      <button class="gym-win-continue" onclick="this.closest('.gym-win-overlay').remove()">🎉 המשך</button>
+    </div>`;
+  document.body.appendChild(screen);
+}
+
+function resetEliteFour() {
+  G.eliteFourDone = false;
+  eliteState = null;
+  saveGame();
+  buildEliteScreen();
+}
+
+// ===== STATS =====
+function openStats() {
+  const s = G.stats || {};
+  const caughtCount = Object.keys(G.caught || {}).length;
+  const seenCount = Object.keys(G.seen || {}).length;
+  const badges = GYM_LEADERS.map((l, i) =>
+    `<div class="stats-badge-slot ${i < G.badges ? 'earned' : ''}">${i < G.badges ? l.badge : '·'}</div>`
+  ).join('');
+  const topTeam = G.team.map(p =>
+    `<img src="${p.sprite}" title="${p.name} L${p.level}" style="width:44px;height:44px;image-rendering:pixelated">`
+  ).join('');
+
+  const content = document.getElementById('statsContent');
+  content.innerHTML = `
+    <button class="pc-close" onclick="closeOverlay('statsOverlay')">✕</button>
+    <div class="stats-title">📊 סטטיסטיקות</div>
+
+    <div class="stats-section">
+      <div class="stats-section-title">קבוצה נוכחית</div>
+      <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${topTeam || 'ריקה'}</div>
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-section-title">קרבות</div>
+      <div class="stats-grid">
+        <div class="stats-card"><div class="stats-card-value">${s.battlesWon || 0}</div><div class="stats-card-label">ניצחונות</div></div>
+        <div class="stats-card"><div class="stats-card-value">${s.battlesLost || 0}</div><div class="stats-card-label">הפסדות</div></div>
+        <div class="stats-card"><div class="stats-card-value">${G.chain || 0}</div><div class="stats-card-label">שרשרת נוכחית</div></div>
+        <div class="stats-card"><div class="stats-card-value">${s.pokemonCaught || 0}</div><div class="stats-card-label">פוקימונים שנלכדו</div></div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-section-title">פוקדקס</div>
+      <div class="stats-grid">
+        <div class="stats-card"><div class="stats-card-value">${seenCount}</div><div class="stats-card-label">נראו</div></div>
+        <div class="stats-card"><div class="stats-card-value">${caughtCount}</div><div class="stats-card-label">נלכדו</div></div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-section-title">תגי ג'ים</div>
+      <div class="stats-badges-row">${badges}</div>
+      <div style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:6px">${G.badges}/8 תגים</div>
+    </div>
+
+    ${G.eliteFourDone ? '<div class="stats-elite-done">👑 השלמת את ה-Elite Four!</div>' : ''}
+
+    <button class="gym-win-continue" style="width:100%;margin-top:12px" onclick="closeOverlay('statsOverlay');showOverlay('leaderboardOverlay');loadLeaderboard()">
+      🏆 לוח שחקנים
+    </button>`;
+
+  showOverlay('statsOverlay');
+}
+
+// ===== LEADERBOARD =====
+function loadLeaderboard() {
+  const list = document.getElementById('leaderboardList');
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)"><span class="loading-spinner"></span> טוען...</div>';
+
+  db.ref('players').once('value').then(snap => {
+    const allPlayers = [];
+    snap.forEach(child => {
+      const d = child.val();
+      if (!d || !d.trainer) return;
+      const score = (d.badges || 0) * 100 + Object.keys(d.caught || {}).length + (d.eliteFourDone ? 500 : 0);
+      allPlayers.push({
+        uid: child.key,
+        name: d.trainer.name || '???',
+        sprite: d.trainer.sprite || '',
+        badges: d.badges || 0,
+        caught: Object.keys(d.caught || {}).length,
+        eliteFourDone: d.eliteFourDone || false,
+        team: d.team || [],
+        score
+      });
+    });
+    allPlayers.sort((a, b) => b.score - a.score);
+
+    if (!allPlayers.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">אין שחקנים עדיין</div>';
+      return;
+    }
+
+    list.innerHTML = allPlayers.map((p, i) => {
+      const isMe = p.uid === G.uid;
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+      const teamImgs = p.team.slice(0,3).map(pk =>
+        `<img src="${pk.sprite}" style="width:28px;height:28px;image-rendering:pixelated" title="${pk.name}">`
+      ).join('');
+      const eliteBadge = p.eliteFourDone ? ' 👑' : '';
+      return `<div class="lb-row ${isMe ? 'me' : ''}" onclick="showLbTeam('${p.uid}')">
+        <div class="lb-rank ${rankClass}">${rankEmoji}</div>
+        <img class="lb-avatar" src="${p.sprite}" onerror="this.style.display='none'">
+        <div class="lb-info">
+          <div class="lb-name">${p.name}${eliteBadge}${isMe ? ' (אתה)' : ''}</div>
+          <div class="lb-badges">${'🏅'.repeat(Math.min(p.badges,8))} ${p.badges}/8 תגים · ${p.caught} נלכדו</div>
+        </div>
+        <div>
+          <div class="lb-score">${p.score}</div>
+          <div class="lb-score-label">נקודות</div>
+        </div>
+      </div>`;
+    }).join('');
+  }).catch(() => {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:#f44336">שגיאה בטעינה</div>';
+  });
+}
+
+function showLbTeam(uid) {
+  db.ref('players/' + uid).once('value').then(snap => {
+    const d = snap.val();
+    if (!d) return;
+    const team = [...(d.team||[]), ...(d.pc||[])].slice(0, 12);
+    const content = document.getElementById('lbTeamContent');
+    content.innerHTML = `
+      <div style="font-size:16px;font-weight:900;text-align:center;margin-bottom:14px;color:var(--yellow)">${d.trainer?.name || '???'} — הקבוצה</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        ${team.map(p => `<div style="text-align:center;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px">
+          <img src="${p.sprite}" style="width:52px;height:52px;image-rendering:pixelated">
+          <div style="font-size:10px;font-weight:700;text-transform:capitalize">${p.name}</div>
+          <div style="font-size:10px;color:var(--text-muted)">L${p.level}</div>
+        </div>`).join('')}
+      </div>
+      <button class="btn-battle btn-run" style="width:100%" onclick="closeOverlay('lbTeamOverlay')">סגור</button>`;
+    showOverlay('lbTeamOverlay');
+  });
+}
+
+// Override handleGymEnemyFainted to also handle elite
+const _origHandleGymEnemyFainted = handleGymEnemyFainted;
 
 // Initial screen
 showScreen('auth');
