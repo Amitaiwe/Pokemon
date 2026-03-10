@@ -493,7 +493,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  min-height: 200px;
+  min-height: 220px;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.1);
@@ -507,6 +507,10 @@ body {
   flex: 1;
 }
 
+.battle-pokemon.enemy {
+  margin-bottom: 40px;
+}
+
 .battle-pokemon img {
   width: clamp(80px, 15vw, 130px);
   height: clamp(80px, 15vw, 130px);
@@ -515,6 +519,19 @@ body {
 }
 
 .battle-pokemon.enemy img { transform: scaleX(-1); }
+
+.battle-types {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 3px 0;
+}
+
+.battle-types .type-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+}
 
 .battle-hp-block {
   background: rgba(0,0,0,0.6);
@@ -991,6 +1008,7 @@ body {
         <div class="battle-hp-block">
           <div class="battle-hp-name" id="battleEnemyName"></div>
           <div class="battle-hp-level" id="battleEnemyLevel"></div>
+          <div id="battleEnemyTypes" class="battle-types"></div>
           <div class="battle-hp-bar-wrap"><div class="battle-hp-bar-fill" id="battleEnemyHPBar" style="width:100%"></div></div>
           <div style="font-size:11px; margin-top:4px; color:var(--text-muted)"><span id="battleEnemyHPNum"></span></div>
         </div>
@@ -1000,6 +1018,7 @@ body {
         <div class="battle-hp-block">
           <div class="battle-hp-name" id="battlePlayerName"></div>
           <div class="battle-hp-level" id="battlePlayerLevel"></div>
+          <div id="battlePlayerTypes" class="battle-types"></div>
           <div class="battle-hp-bar-wrap"><div class="battle-hp-bar-fill" id="battlePlayerHPBar" style="width:100%"></div></div>
           <div style="font-size:11px; margin-top:4px; color:var(--text-muted)"><span id="battlePlayerHPNum"></span></div>
         </div>
@@ -1505,7 +1524,7 @@ function getActivePokemon() {
 
 function startWildBattle(enemy) {
   const active = getActivePokemon();
-  if (!active) { showToast('כל הפוקימונים שלך עולפו! לך לג\'ים לאחר שתחזק את הקבוצה'); return; }
+  if (!active) { showToast('כל הפוקימונים הובסו! לך לג\'ים לאחר שתחזק את הקבוצה'); return; }
 
   battleState = { enemy, isGym: false, catchAttempts: 0, gymIndex: -1, gymPokeIndex: 0, enemyTeam: null };
   catchAttempts = 0;
@@ -1519,11 +1538,15 @@ function setupBattleUI(player, enemy) {
   document.getElementById('battlePlayerSprite').src = player.backSprite || player.sprite;
   document.getElementById('battlePlayerName').textContent = player.name;
   document.getElementById('battlePlayerLevel').textContent = 'רמה ' + player.level;
+  document.getElementById('battlePlayerTypes').innerHTML = (player.types||[]).map(t =>
+    `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
   updateBattleHP('player', player);
 
   document.getElementById('battleEnemySprite').src = enemy.sprite;
   document.getElementById('battleEnemyName').textContent = enemy.name;
   document.getElementById('battleEnemyLevel').textContent = 'רמה ' + enemy.level;
+  document.getElementById('battleEnemyTypes').innerHTML = (enemy.types||[]).map(t =>
+    `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
   updateBattleHP('enemy', enemy);
 
   setBattleLog(`פוקימון פראי ${enemy.name} הופיע!`);
@@ -1616,7 +1639,7 @@ async function playerAttack(type) {
   await sleep(900);
 
   if (enemy.currentHP <= 0) {
-    setBattleLog(`${enemy.name} עולף! 🎉`);
+    setBattleLog(`${enemy.name} הובס! 🎉`);
     await sleep(700);
     if (battleState.isGym) {
       handleGymEnemyFainted();
@@ -1641,7 +1664,7 @@ async function playerAttack(type) {
   await sleep(700);
 
   if (player.currentHP <= 0) {
-    setBattleLog(`${player.name} עולף! 😞`);
+    setBattleLog(`${player.name} הובס! 😞`);
     await sleep(700);
     // Try next Pokémon
     const next = G.team.find(p => p.currentHP > 0 && p !== player);
@@ -1655,11 +1678,12 @@ async function playerAttack(type) {
       updateTeamPanel();
       setBattleButtonsEnabled(true);
     } else {
-      setBattleLog('כל הפוקימונים שלך עולפו! 😢 מתרפאים...');
+      setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
       healAllPokemon();
       saveGame();
       await sleep(1500);
       closeAllOverlays();
+      battleState = null;
       updateTeamPanel();
       showToast('💊 כל הפוקימונים התרפאו! המשך לשחק');
     }
@@ -1820,7 +1844,7 @@ async function startGymBattle() {
   if (!gymTeam.length) { showToast('שגיאה בטעינת ג\'ים'); return; }
 
   const active = getActivePokemon();
-  if (!active) { showToast('כל הפוקימונים שלך עולפו!'); return; }
+  if (!active) { showToast('כל הפוקימונים הובסו!'); return; }
 
   battleState = {
     enemy: gymTeam[0],
