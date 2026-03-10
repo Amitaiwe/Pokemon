@@ -688,9 +688,10 @@
 
 <!-- Firebase + Game Logic -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const FB_CONFIG = {
   apiKey: "AIzaSyBiL-db2OKxiv2N1mKkT7Ittj-QgP-YVw",
@@ -818,15 +819,23 @@ function scheduleSave() {
 
 // ===== AUTH FLOW =====
 window.signInGoogle = async function() {
+  console.log('signInGoogle called, auth:', !!auth, 'provider:', !!provider);
   try {
     provider.setCustomParameters({ prompt: 'select_account' });
+    console.log('attempting signInWithPopup...');
     await signInWithPopup(auth, provider);
+    console.log('popup success');
   } catch(e) {
-    if (e.code === 'auth/popup-blocked') {
-      // fallback to redirect
-      await signInWithRedirect(auth, provider);
+    console.error('popup error:', e.code, e.message);
+    if (e.code === 'auth/popup-blocked' || 
+        e.code === 'auth/operation-not-supported-in-this-environment' ||
+        e.code === 'auth/popup-closed-by-user') {
+      try {
+        console.log('trying redirect...');
+        await signInWithRedirect(auth, provider);
+      } catch(e2) { alert('שגיאה: ' + e2.code + ' - ' + e2.message); }
     } else {
-      alert('התחברות נכשלה: ' + e.code + ' ' + e.message);
+      alert('שגיאה: ' + e.code + '\n' + e.message);
     }
   }
 };
