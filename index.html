@@ -1613,8 +1613,11 @@ function typeEffectivenessText(mult) {
 function calcDamage(attacker, defender, type) {
   const atk = type === 'physical' ? attacker.attack : attacker.spAttack;
   const def = type === 'physical' ? defender.defense : defender.spDefense;
-  const base = Math.max(1, atk - def);
-  const factor = 0.8 + Math.random() * 0.4;
+  const power = type === 'physical' ? 40 : 50;
+  const level = attacker.level || 1;
+  // Gen 1 damage formula
+  const base = Math.floor((((2 * level / 5 + 2) * power * atk / def) / 50) + 2);
+  const factor = 0.85 + Math.random() * 0.15; // random 85%–100%
   const typeMult = getTypeMultiplier(attacker.types || [], defender.types || []);
   return { dmg: Math.max(1, Math.floor(base * factor * typeMult)), mult: typeMult };
 }
@@ -2046,8 +2049,10 @@ function openPokeCard(index, source) {
     </div>`).join('');
 
   const actions = source === 'team'
-    ? `<button class="btn-battle btn-run" onclick="moveToPc(${index}); closeOverlay('pokeCardOverlay')">📦 העבר ל-PC</button>`
-    : `<button class="btn-battle btn-special" onclick="moveToTeam(${index}); closeOverlay('pokeCardOverlay')" ${G.team.length >= 6 ? 'disabled title="הקבוצה מלאה"' : ''}>➕ הוסף לקבוצה</button>`;
+    ? `<button class="btn-battle btn-special" onclick="moveToFront(${index}, 'team'); closeOverlay('pokeCardOverlay')" ${index === 0 ? 'disabled' : ''}>⬆️ העבר לראש</button>
+       <button class="btn-battle btn-run" onclick="moveToPc(${index}); closeOverlay('pokeCardOverlay')">📦 העבר ל-PC</button>`
+    : `<button class="btn-battle btn-special" onclick="moveToTeam(${index}); closeOverlay('pokeCardOverlay')" ${G.team.length >= 6 ? 'disabled title="הקבוצה מלאה"' : ''}>➕ הוסף לקבוצה</button>
+       <button class="btn-battle btn-attack" onclick="moveToFrontFromPC(${index}); closeOverlay('pokeCardOverlay')" ${G.team.length >= 6 ? 'disabled title="הקבוצה מלאה"' : ''}>⬆️ הוסף לראש הקבוצה</button>`;
 
   document.getElementById('pokeCardContent').innerHTML = `
     <button class="card-close" onclick="closeOverlay('pokeCardOverlay')">✕</button>
@@ -2065,6 +2070,24 @@ function openPokeCard(index, source) {
     </div>`;
 
   showOverlay('pokeCardOverlay');
+}
+
+function moveToFront(teamIndex, source) {
+  if (teamIndex === 0) return;
+  const poke = G.team.splice(teamIndex, 1)[0];
+  G.team.unshift(poke);
+  updateTeamPanel();
+  saveGame();
+  showToast(`${poke.name} הועבר לראש הקבוצה!`);
+}
+
+function moveToFrontFromPC(pcIndex) {
+  if (G.team.length >= 6) { showToast('הקבוצה מלאה! העבר פוקימון ל-PC קודם'); return; }
+  const poke = G.pc.splice(pcIndex, 1)[0];
+  G.team.unshift(poke);
+  updateTeamPanel();
+  saveGame();
+  showToast(`${poke.name} הוסף לראש הקבוצה!`);
 }
 
 function moveToPc(teamIndex) {
