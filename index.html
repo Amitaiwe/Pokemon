@@ -493,7 +493,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  min-height: 260px;
+  min-height: 290px;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.1);
@@ -529,16 +529,16 @@ body {
 
 /* Enemy sprite — large and prominent */
 .battle-pokemon.enemy img {
-  width: clamp(110px, 22vw, 150px);
-  height: clamp(110px, 22vw, 150px);
+  width: clamp(130px, 26vw, 170px);
+  height: clamp(130px, 26vw, 170px);
   image-rendering: pixelated;
   filter: drop-shadow(0 6px 14px rgba(0,0,0,0.9));
 }
 
 /* Player sprite — slightly smaller, from behind */
 .battle-pokemon.player img {
-  width: clamp(90px, 18vw, 120px);
-  height: clamp(90px, 18vw, 120px);
+  width: clamp(100px, 20vw, 130px);
+  height: clamp(100px, 20vw, 130px);
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
 }
@@ -913,6 +913,7 @@ body {
   gap: 16px;
   margin-bottom: 24px;
   position: relative;
+  direction: ltr; /* force LTR so arrow points correctly: old → new */
 }
 
 .evo-sprite-wrap {
@@ -2448,8 +2449,10 @@ const BASE_POKEMON_BY_TYPE = {
     {id:371,name:'Bagon',rarity:'very_rare'},{id:374,name:'Beldum',rarity:'very_rare'},
     // Gen 4+
     {id:443,name:'Gible',rarity:'very_rare'},{id:483,name:'Dialga',rarity:'very_rare'},
-    {id:633,name:'Deino',rarity:'very_rare'},{id:704,name:'Goomy',rarity:'very_rare'},
-    {id:782,name:'Jangmo-o',rarity:'very_rare'},{id:884,name:'Duraludon',rarity:'very_rare'}
+    // Gen 5+
+    {id:610,name:'Axew',rarity:'rare'},{id:633,name:'Deino',rarity:'very_rare'},
+    {id:704,name:'Goomy',rarity:'very_rare'},{id:782,name:'Jangmo-o',rarity:'very_rare'},
+    {id:884,name:'Duraludon',rarity:'very_rare'}
   ],
   bug: [
     {id:10,name:'Caterpie',rarity:'common'},{id:13,name:'Weedle',rarity:'common'},
@@ -2827,10 +2830,9 @@ async function playerAttackWild(type) {
     G.stats.battlesWon = (G.stats.battlesWon || 0) + 1;
     updateTopBar();
     const chainMult = G.chain >= 10 ? 3 : G.chain >= 5 ? 2 : G.chain >= 3 ? 1.5 : 1;
-    if (chainMult > 1) {
-      const msg = G.chain >= 10 ? `🔥🔥🔥 שרשרת x${G.chain}! XP x3!` : G.chain >= 5 ? `🔥🔥 שרשרת x${G.chain}! XP x2!` : `🔥 שרשרת x${G.chain}! XP x1.5!`;
-      showToast(msg);
-    }
+    if (G.chain === 3)  showToast(`🔥 שרשרת x3! XP x1.5!`);
+    else if (G.chain === 5)  showToast(`🔥🔥 שרשרת x5! XP x2!`);
+    else if (G.chain === 10) showToast(`🔥🔥🔥 שרשרת x10! XP x3!`);
     setBattleLog(`${enemy.name} הובס! 🎉`);
     showPostBattleActions();
   } else if (!player || player.currentHP <= 0) {
@@ -3681,9 +3683,61 @@ async function openPokedexDetail(id) {
     const speciesRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
     const species = await speciesRes.json();
 
-    // Get Hebrew/English flavor text
+    // Get Hebrew/English flavor text — not shown, replaced by evo chain
     const flavorEntry = species.flavor_text_entries.find(e => e.language.name === 'en');
     const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f/g,' ').replace(/\n/g,' ') : '';
+
+    // Build evolution chain map
+    let evoHTML = '';
+    try {
+      const evoRes = await fetch(species.evolution_chain.url);
+      const evoData = await evoRes.json();
+
+      // Flatten the chain into stages array
+      const stages = [];
+      let node = evoData.chain;
+      while (node) {
+        // Get the pokemon ID from the species URL
+        const specUrl = node.species.url;
+        const evoId = parseInt(specUrl.split('/').filter(Boolean).pop());
+        const minLevel = node.evolution_details?.[0]?.min_level || null;
+        stages.push({ id: evoId, name: node.species.name, minLevel });
+        node = node.evolves_to?.[0] || null;
+      }
+
+      if (stages.length <= 1) {
+        evoHTML = `<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:12px">אין התפתחויות</div>`;
+      } else {
+        const stageEls = stages.map((s, i) => {
+          const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.id}.png`;
+          const isCurrent = s.id === id;
+          const isCaught = !!G.caught[s.id];
+          const border = isCurrent ? '2px solid var(--yellow)' : isCaught ? '2px solid #4caf50' : '2px solid rgba(255,255,255,0.1)';
+          const arrow = i < stages.length - 1 ? `<div style="font-size:22px;color:var(--yellow);margin:0 4px;align-self:center">→</div>` : '';
+          const lvlLabel = s.minLevel ? `<div style="font-size:10px;color:var(--text-muted)">Lv${s.minLevel}</div>` : (i > 0 ? `<div style="font-size:10px;color:var(--text-muted)">—</div>` : '');
+          return `<div style="display:flex;align-items:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+              <div style="border-radius:50%;border:${border};padding:3px;background:rgba(255,255,255,0.04)">
+                <img src="${sprite}" style="width:52px;height:52px;image-rendering:pixelated;display:block">
+              </div>
+              <div style="font-size:10px;font-weight:700;text-transform:capitalize;color:${isCurrent?'var(--yellow)':'white'}">${s.name}</div>
+              ${lvlLabel}
+            </div>
+            ${arrow}
+          </div>`;
+        }).join('');
+
+        evoHTML = `
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">שרשרת התפתחויות</div>
+            <div style="display:flex;justify-content:center;align-items:center;direction:ltr;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px">
+              ${stageEls}
+            </div>
+          </div>`;
+      }
+    } catch(e) {
+      evoHTML = '';
+    }
 
     const types = apiData.types.map(t =>
       `<span class="type-badge ${TYPE_COLORS[t.type.name]||''}">${t.type.name}</span>`).join(' ');
@@ -3705,7 +3759,7 @@ async function openPokedexDetail(id) {
 
     document.getElementById('pdexDetailBody').innerHTML = `
       <div style="text-align:center;margin-bottom:12px">${types}</div>
-      <div class="pdex-detail-desc">${flavor}</div>
+      ${evoHTML}
       <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px">
         <div style="text-align:center">
           <div style="font-size:11px;color:var(--text-muted)">גובה</div>
@@ -3922,7 +3976,7 @@ function openStats() {
       <div class="stats-section-title">קרבות</div>
       <div class="stats-grid">
         <div class="stats-card"><div class="stats-card-value">${s.battlesWon || 0}</div><div class="stats-card-label">ניצחונות</div></div>
-        <div class="stats-card"><div class="stats-card-value">${s.battlesLost || 0}</div><div class="stats-card-label">הפסדות</div></div>
+        <div class="stats-card"><div class="stats-card-value">${s.battlesLost || 0}</div><div class="stats-card-label">הפסדים</div></div>
         <div class="stats-card"><div class="stats-card-value">${G.chain || 0}</div><div class="stats-card-label">שרשרת נוכחית</div></div>
         <div class="stats-card"><div class="stats-card-value">${s.pokemonCaught || 0}</div><div class="stats-card-label">פוקימונים שנלכדו</div></div>
       </div>
