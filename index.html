@@ -1171,6 +1171,12 @@ body {
 
 .hidden { display: none !important; }
 
+.overlay-backdrop {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* battle shake animation */
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -2127,7 +2133,7 @@ body {
   </div>
 
   <!-- RESET CONFIRM POPUP -->
-  <div class="overlay-backdrop hidden" id="resetOverlay" onclick="closeOverlay('resetOverlay')">
+  <div class="overlay-backdrop hidden" id="resetOverlay" onclick="document.getElementById('resetOverlay').classList.add('hidden')">
     <div class="reset-popup" onclick="event.stopPropagation()">
       <div class="reset-popup-icon">⚠️</div>
       <div class="reset-popup-title">איפוס משחק</div>
@@ -2136,7 +2142,7 @@ body {
         <input type="text" class="reset-confirm-input" id="resetConfirmInput" placeholder="כתוב 'אפס' לאישור" autocomplete="off">
       </div>
       <div class="reset-popup-btns">
-        <button class="btn-reset-cancel" onclick="closeOverlay('resetOverlay')">ביטול</button>
+        <button class="btn-reset-cancel" onclick="document.getElementById('resetOverlay').classList.add('hidden')">ביטול</button>
         <button class="btn-reset-confirm" id="btnResetConfirm" onclick="doResetGame()" disabled>🗑️ אפס הכל</button>
       </div>
     </div>
@@ -4918,7 +4924,7 @@ function showResetConfirm() {
   if (input) input.value = '';
   const btn = document.getElementById('btnResetConfirm');
   if (btn) btn.disabled = true;
-  showOverlay('resetOverlay');
+  document.getElementById('resetOverlay').classList.remove('hidden');
   setTimeout(() => input?.focus(), 200);
 }
 
