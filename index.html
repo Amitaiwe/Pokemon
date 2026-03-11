@@ -842,24 +842,29 @@ body {
 /* ===== NOTIFICATION TOAST ===== */
 #toast {
   position: fixed;
-  bottom: 80px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: rgba(20,20,40,0.95);
-  border: 1px solid var(--panel-border);
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(10,10,25,0.97);
+  border: 2px solid var(--yellow);
   color: white;
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-size: 14px;
+  padding: 16px 32px;
+  border-radius: 20px;
+  font-size: 16px;
   font-weight: 700;
   z-index: 9999;
-  transition: transform 0.3s;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
   text-align: center;
-  max-width: 90vw;
+  max-width: 85vw;
   pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 0 30px rgba(245,197,24,0.25), 0 8px 32px rgba(0,0,0,0.6);
 }
 
-#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
 
 /* ===== EVOLUTION OVERLAY ===== */
 #evolutionOverlay {
@@ -1606,7 +1611,158 @@ body {
 }
 .gym-win-continue:hover { transform: translateY(-2px); }
 
-/* ===== CHAIN COUNTER ===== */
+/* ===== EGG COUNTER ===== */
+.egg-counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+/* ===== EGG HATCH OVERLAY ===== */
+.egg-hatch-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: radial-gradient(ellipse at center, #1a0a2e 0%, #000 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.egg-hatch-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px; color: #ffd700;
+  text-align: center; margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(255,215,0,0.7);
+  animation: titleGlow 1s ease-in-out infinite alternate;
+}
+@keyframes titleGlow {
+  from { text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+  to   { text-shadow: 0 0 30px rgba(255,215,0,1); }
+}
+.egg-hatch-egg {
+  position: relative;
+  width: 140px; height: 160px;
+  margin: 0 auto 20px;
+}
+.egg-hatch-egg svg {
+  width: 140px; height: 160px;
+  filter: drop-shadow(0 0 20px rgba(200,180,255,0.6));
+}
+@keyframes eggShake {
+  0%,100% { transform: rotate(0deg); }
+  15%      { transform: rotate(-8deg); }
+  30%      { transform: rotate(8deg); }
+  45%      { transform: rotate(-5deg); }
+  60%      { transform: rotate(5deg); }
+  75%      { transform: rotate(-3deg); }
+}
+@keyframes eggCrack {
+  0%   { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 20px rgba(200,180,255,0.6)); }
+  30%  { transform: scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 30px rgba(255,255,255,0.9)); }
+  60%  { transform: scale(1.3) rotate(5deg); filter: drop-shadow(0 0 50px rgba(255,255,255,1)); }
+  100% { transform: scale(0) rotate(20deg); opacity: 0; }
+}
+@keyframes pokeAppear {
+  0%   { transform: scale(0) translateY(30px); opacity: 0; filter: brightness(3) saturate(0); }
+  50%  { transform: scale(1.3) translateY(-10px); filter: brightness(2) saturate(0.5); }
+  100% { transform: scale(1) translateY(0); opacity: 1; filter: brightness(1) saturate(1); }
+}
+.egg-hatch-pokemon {
+  display: none;
+  flex-direction: column; align-items: center;
+  animation: pokeAppear 1s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.egg-hatch-pokemon img {
+  width: 120px; height: 120px; image-rendering: pixelated;
+  filter: drop-shadow(0 0 25px rgba(255,215,0,0.8));
+}
+.egg-hatch-pokemon-name {
+  font-size: 22px; font-weight: 900;
+  text-transform: capitalize; color: #ffd700;
+  margin-top: 10px; text-align: center;
+}
+.egg-hatch-pokemon-level { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+.egg-hatch-particles { position: absolute; inset: 0; pointer-events: none; }
+.egg-hatch-btn {
+  margin-top: 24px;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #1a0a00; border: none; border-radius: 14px;
+  padding: 14px 40px; font-family: 'Heebo', sans-serif;
+  font-size: 16px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255,215,0,0.4);
+  display: none;
+}
+.egg-crack-line {
+  position: absolute;
+  background: rgba(255,255,255,0.9);
+  border-radius: 2px;
+  transform-origin: bottom center;
+}
+
+
+.evo-stone-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(138,43,226,0.3), rgba(75,0,130,0.4));
+  border: 1px solid rgba(186,85,211,0.5);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.evo-stone-counter:hover { border-color: #da70d6; box-shadow: 0 0 12px rgba(186,85,211,0.4); }
+.evo-stone-icon {
+  width: 22px; height: 22px;
+}
+
+/* ===== EVO STONE POPUP ===== */
+.evo-stone-use-overlay {
+  position: fixed; inset: 0; z-index: 9993;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75);
+  animation: fadeIn 0.2s ease;
+}
+.evo-stone-use-card {
+  background: var(--panel);
+  border: 2px solid #da70d6;
+  border-radius: 22px;
+  padding: 24px 20px;
+  text-align: center;
+  width: 90vw; max-width: 380px;
+  box-shadow: 0 0 40px rgba(186,85,211,0.35);
+  animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.evo-stone-use-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px; color: #da70d6;
+  margin-bottom: 6px;
+}
+.evo-stone-use-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+.evo-stone-pokemon-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.evo-stone-poke-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 10px 14px;
+  cursor: pointer; transition: all 0.2s;
+  width: 100%;
+}
+.evo-stone-poke-btn:hover { border-color: #da70d6; background: rgba(186,85,211,0.1); }
+.evo-stone-poke-btn img { width: 44px; height: 44px; image-rendering: pixelated; }
+.evo-stone-poke-info { flex: 1; text-align: right; }
+.evo-stone-poke-name { font-size: 14px; font-weight: 900; text-transform: capitalize; }
+.evo-stone-poke-evo { font-size: 11px; color: #da70d6; }
+.evo-stone-pick-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+
+
 .chain-counter {
   background: linear-gradient(135deg, #ff6b35, #ff3d00);
   color: white;
@@ -1872,6 +2028,12 @@ body {
       <div class="pokeball-icon"></div>
       <span id="pokeballCount">5</span> כדורים
     </div>
+    <div class="evo-stone-counter" id="evoStoneCounter" onclick="useEvoStone()" style="display:none">
+      <span id="evoStoneCount">0</span>
+    </div>
+    <div class="egg-counter" id="eggCounter" style="display:none">
+      🥚 <span id="eggBattleCount">0</span>/100
+    </div>
     <button class="btn-gym" onclick="openGymScreen()" id="btnGym">🏟️ ג'ים <span id="gymNumber">1</span></button>
     <button class="btn-elite-four" onclick="openEliteFour()" id="btnEliteFour" style="display:none">👑 Elite Four</button>
   </div>
@@ -2082,7 +2244,7 @@ const ZONES = [
   { row: 1, col: 2, name: 'יער',           types: ['bug','grass'],                emoji: '🌿' },
   { row: 1, col: 1, name: 'מדבר',         types: ['ground','normal','flying'],   emoji: '🏜️' },
   { row: 1, col: 0, name: 'ים',            types: ['water','ice'],                emoji: '🌊' },
-  { row: 2, col: 2, name: 'מערה',         types: ['poison','rock','fighting'],   emoji: '🪨' },
+  { row: 2, col: 2, name: 'מערה',         types: ['poison','rock','fighting','steel'], emoji: '🪨' },
   { row: 2, col: 1, name: 'שדה חשמלי',   types: ['electric'],                   emoji: '⚡' },
   { row: 2, col: 0, name: 'ים',            types: ['water','ice'],                emoji: '🌊' }
 ];
@@ -2123,14 +2285,16 @@ let G = {
   badges: 0,
   seen: {},
   caught: {},
-  chain: 0,          // win streak counter
+  chain: 0,
   eliteFourDone: false,
   stats: {
     battlesWon: 0,
     battlesLost: 0,
-    pokemonCaught: 0,
-    stepsWalked: 0
-  }
+    pokemonCaught: 0
+  },
+  evoStones: 0,
+  egg: null,         // null = no egg yet | { battleCount: 0 }
+  totalBattles: 0    // all battles ever (for egg counter)
 };
 
 let currentUser = null;
@@ -2173,7 +2337,10 @@ function saveGame() {
     caught: G.caught || {},
     chain: G.chain || 0,
     eliteFourDone: G.eliteFourDone || false,
-    stats: G.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0, stepsWalked:0 }
+    stats: G.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0 },
+    evoStones: G.evoStones || 0,
+    egg: G.egg || null,
+    totalBattles: G.totalBattles || 0
   };
   db.ref('players/' + G.uid).set(data);
 }
@@ -2192,7 +2359,10 @@ function loadGame() {
       G.caught = data.caught || {};
       G.chain = data.chain || 0;
       G.eliteFourDone = data.eliteFourDone || false;
-      G.stats = data.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0, stepsWalked:0 };
+      G.stats = data.stats || { battlesWon:0, battlesLost:0, pokemonCaught:0 };
+      G.evoStones = data.evoStones || 0;
+      G.egg = data.egg || null;
+      G.totalBattles = data.totalBattles || 0;
       [...G.team, ...G.pc].forEach(p => { G.seen[p.id] = true; G.caught[p.id] = true; });
       healAllPokemon();
       saveGame();
@@ -2280,6 +2450,25 @@ function updateTopBar() {
   document.getElementById('gymBadgeCount').textContent = G.badges;
   document.getElementById('gymNumber').textContent = Math.min(G.gymProgress + 1, 8);
   document.getElementById('pokeballCount').textContent = G.pokeballs;
+
+  // Egg counter
+  const eggCounter = document.getElementById('eggCounter');
+  if (G.egg) {
+    eggCounter.style.display = 'flex';
+    document.getElementById('eggBattleCount').textContent = G.egg.battleCount;
+  } else {
+    eggCounter.style.display = 'none';
+  }
+
+  // Evo stone counter
+  const stoneCounter = document.getElementById('evoStoneCounter');
+  const stoneCount = document.getElementById('evoStoneCount');
+  if (G.evoStones > 0) {
+    stoneCounter.style.display = 'flex';
+    stoneCounter.innerHTML = `${MOONSTONE_SVG_SMALL} <span>${G.evoStones}</span>`;
+  } else {
+    stoneCounter.style.display = 'none';
+  }
 
   // Show Elite Four button after 8 badges
   const eliteBtn = document.getElementById('btnEliteFour');
@@ -2573,6 +2762,14 @@ const BASE_POKEMON_BY_TYPE = {
     {id:539,name:'Sawk',rarity:'rare'},{id:619,name:'Mienfoo',rarity:'common'},
     {id:674,name:'Pancham',rarity:'common'},{id:701,name:'Hawlucha',rarity:'rare'},
     {id:759,name:'Stufful',rarity:'common'},{id:852,name:'Clobbopus',rarity:'common'}
+  ],
+  steel: [
+    {id:304,name:'Aron',rarity:'common'},{id:374,name:'Beldum',rarity:'very_rare'},
+    {id:436,name:'Bronzor',rarity:'common'},{id:529,name:'Drilbur',rarity:'common'},
+    {id:597,name:'Ferroseed',rarity:'common'},{id:624,name:'Pawniard',rarity:'rare'},
+    {id:679,name:'Honedge',rarity:'rare'},{id:707,name:'Klefki',rarity:'rare'},
+    {id:762,name:'Steenee',rarity:'common'},{id:798,name:'Kartana',rarity:'very_rare'},
+    {id:863,name:'Perrserker',rarity:'rare'},{id:884,name:'Duraludon',rarity:'very_rare'}
   ]
 };
 
@@ -2587,12 +2784,21 @@ async function clickZone(idx) {
   if (battleState) return;
   const zone = ORDERED_ZONES[idx];
 
-  // 1% chance for Pokeball drop
+  // 3.5% Pokeball drop
   if (Math.random() < 0.035) {
     G.pokeballs++;
     updateTopBar();
     saveGame();
     showFoundPokeballPopup();
+    return;
+  }
+
+  // 2% Evo Stone drop
+  if (Math.random() < 0.02 && G.evoStones < 3) {
+    G.evoStones++;
+    updateTopBar();
+    saveGame();
+    showFoundEvoStonePopup();
     return;
   }
 
@@ -2834,6 +3040,7 @@ async function playerAttackWild(type) {
     else if (G.chain === 5)  showToast(`🔥🔥 שרשרת x5! XP x2!`);
     else if (G.chain === 10) showToast(`🔥🔥🔥 שרשרת x10! XP x3!`);
     setBattleLog(`${enemy.name} הובס! 🎉`);
+    incrementBattleCounter();
     showPostBattleActions();
   } else if (!player || player.currentHP <= 0) {
     // Loss — break chain
@@ -2845,16 +3052,10 @@ async function playerAttackWild(type) {
     await sleep(400);
     const next = G.team.find(p => p.currentHP > 0 && p !== player);
     if (next) {
-      battleState.player = next;
-      document.getElementById('battlePlayerSprite').src = next.backSprite || next.sprite;
-      document.getElementById('battlePlayerName').textContent = next.name;
-      document.getElementById('battlePlayerLevel').textContent = 'רמה ' + next.level;
-      document.getElementById('battlePlayerTypes').innerHTML = (next.types||[]).map(t =>
-        `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
-      updateBattleHP('player', next);
-      updateTeamPanel();
-      setBattleButtonsEnabled(true);
+      // Show switch popup instead of auto-switching
+      showSwitchAfterFaint();
     } else {
+      incrementBattleCounter();
       setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
       healAllPokemon(); saveGame();
       await sleep(500);
@@ -2910,22 +3111,13 @@ async function playerAttackGym(type) {
     await sleep(700);
     const next = G.team.find(p => p.currentHP > 0 && p !== player);
     if (next) {
-      setBattleLog(`${next.name} נכנס לקרב!`);
-      battleState.player = next;
-      await sleep(600);
-      document.getElementById('battlePlayerSprite').src = next.backSprite || next.sprite;
-      document.getElementById('battlePlayerName').textContent = next.name;
-      document.getElementById('battlePlayerLevel').textContent = 'רמה ' + next.level;
-      document.getElementById('battlePlayerTypes').innerHTML = (next.types||[]).map(t =>
-        `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
-      updateBattleHP('player', next);
-      updateTeamPanel();
-      setBattleButtonsEnabled(true);
+      showSwitchAfterFaint();
     } else {
       G.chain = 0;
       G.stats = G.stats || {};
       G.stats.battlesLost = (G.stats.battlesLost || 0) + 1;
       updateTopBar();
+      incrementBattleCounter();
       setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
       healAllPokemon(); saveGame();
       await sleep(250);
@@ -3048,7 +3240,7 @@ function releaseForXP() {
   const multStr = chainMult > 1 ? ` (x${chainMult} שרשרת!)` : '';
   setBattleLog(`${enemy.name} שוחרר. קיבלת ${xpGain} XP!${multStr} 🌟`);
   healAllPokemon();
-  saveGame();
+  incrementBattleCounter();
 
   setTimeout(() => {
     closeAllOverlays();
@@ -3063,10 +3255,26 @@ function healAllPokemon() {
   G.pc.forEach(p => { p.currentHP = p.maxHP; });
 }
 
+function incrementBattleCounter() {
+  G.totalBattles = (G.totalBattles || 0) + 1;
+  if (G.egg) {
+    G.egg.battleCount++;
+    updateTopBar();
+    if (G.egg.battleCount >= 100) {
+      G.egg.battleCount = 100; // cap display
+      saveGame();
+      setTimeout(() => hatchEgg(), 400);
+      return;
+    }
+  }
+  saveGame();
+}
+
 function runFromBattle() {
   G.chain = 0;
   updateTopBar();
   setBattleLog('ברחת מהקרב!');
+  incrementBattleCounter();
   setTimeout(() => { closeAllOverlays(); battleState = null; }, 800);
 }
 
@@ -3190,6 +3398,12 @@ async function handleGymEnemyFainted() {
     G.badges++;
     updateTopBar();
     healAllPokemon();
+    // Grant egg on first gym win
+    if (G.badges === 1 && !G.egg) {
+      G.egg = { battleCount: 0 };
+      updateTopBar();
+      showToast('🥚 קיבלת ביצה! לחם 100 קרבות כדי לבקוע אותה!');
+    }
     const xpGain = 200 * (wonGymIdx + 1);
     G.team.forEach(p => { if (p.currentHP > 0) giveXP(p, xpGain); });
     saveGame();
@@ -3198,7 +3412,7 @@ async function handleGymEnemyFainted() {
     closeAllOverlays();
     battleState = null;
     updateTeamPanel();
-    showGymBadgeScreen(wonGymIdx, () => { checkEvolutions(); });
+    showGymBadgeScreen(wonGymIdx, () => { incrementBattleCounter(); checkEvolutions(); });
   } else {
     const nextEnemy = bs.enemyTeam[bs.gymPokeIndex];
     bs.enemy = nextEnemy;
@@ -3680,64 +3894,60 @@ async function openPokedexDetail(id) {
 
   try {
     const apiData = await fetchPokemon(id);
-    const speciesRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-    const species = await speciesRes.json();
 
-    // Get Hebrew/English flavor text — not shown, replaced by evo chain
-    const flavorEntry = species.flavor_text_entries.find(e => e.language.name === 'en');
-    const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f/g,' ').replace(/\n/g,' ') : '';
-
-    // Build evolution chain map
+    // Species + evo chain — separate fetch, don't crash outer block
     let evoHTML = '';
     try {
-      const evoRes = await fetch(species.evolution_chain.url);
-      const evoData = await evoRes.json();
+      const speciesRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+      const species = await speciesRes.json();
 
-      // Flatten the chain into stages array
-      const stages = [];
-      let node = evoData.chain;
-      while (node) {
-        // Get the pokemon ID from the species URL
-        const specUrl = node.species.url;
-        const evoId = parseInt(specUrl.split('/').filter(Boolean).pop());
-        const minLevel = node.evolution_details?.[0]?.min_level || null;
-        stages.push({ id: evoId, name: node.species.name, minLevel });
-        node = node.evolves_to?.[0] || null;
-      }
+      // Build evolution chain map
+      try {
+        const evoRes = await fetch(species.evolution_chain.url);
+        const evoData = await evoRes.json();
 
-      if (stages.length <= 1) {
-        evoHTML = `<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:12px">אין התפתחויות</div>`;
-      } else {
-        const stageEls = stages.map((s, i) => {
-          const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.id}.png`;
-          const isCurrent = s.id === id;
-          const isCaught = !!G.caught[s.id];
-          const border = isCurrent ? '2px solid var(--yellow)' : isCaught ? '2px solid #4caf50' : '2px solid rgba(255,255,255,0.1)';
-          const arrow = i < stages.length - 1 ? `<div style="font-size:22px;color:var(--yellow);margin:0 4px;align-self:center">→</div>` : '';
-          const lvlLabel = s.minLevel ? `<div style="font-size:10px;color:var(--text-muted)">Lv${s.minLevel}</div>` : (i > 0 ? `<div style="font-size:10px;color:var(--text-muted)">—</div>` : '');
-          return `<div style="display:flex;align-items:center">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-              <div style="border-radius:50%;border:${border};padding:3px;background:rgba(255,255,255,0.04)">
-                <img src="${sprite}" style="width:52px;height:52px;image-rendering:pixelated;display:block">
+        const stages = [];
+        let node = evoData.chain;
+        while (node) {
+          const specUrl = node.species.url;
+          const evoId = parseInt(specUrl.split('/').filter(Boolean).pop());
+          const minLevel = node.evolution_details?.[0]?.min_level || null;
+          stages.push({ id: evoId, name: node.species.name, minLevel });
+          node = node.evolves_to?.[0] || null;
+        }
+
+        if (stages.length <= 1) {
+          evoHTML = `<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:12px">אין התפתחויות</div>`;
+        } else {
+          const stageEls = stages.map((s, i) => {
+            const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.id}.png`;
+            const isCurrent = s.id === id;
+            const isCaught = !!G.caught[s.id];
+            const border = isCurrent ? '2px solid var(--yellow)' : isCaught ? '2px solid #4caf50' : '2px solid rgba(255,255,255,0.1)';
+            const arrow = i < stages.length - 1 ? `<div style="font-size:22px;color:var(--yellow);margin:0 6px;align-self:center">→</div>` : '';
+            const lvlLabel = s.minLevel ? `<div style="font-size:10px;color:var(--text-muted)">Lv${s.minLevel}</div>` : (i > 0 ? `<div style="font-size:10px;color:var(--text-muted)">—</div>` : '');
+            return `<div style="display:flex;align-items:center">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="border-radius:50%;border:${border};padding:3px;background:rgba(255,255,255,0.04)">
+                  <img src="${sprite}" style="width:52px;height:52px;image-rendering:pixelated;display:block">
+                </div>
+                <div style="font-size:10px;font-weight:700;text-transform:capitalize;color:${isCurrent?'var(--yellow)':'white'}">${s.name}</div>
+                ${lvlLabel}
               </div>
-              <div style="font-size:10px;font-weight:700;text-transform:capitalize;color:${isCurrent?'var(--yellow)':'white'}">${s.name}</div>
-              ${lvlLabel}
-            </div>
-            ${arrow}
-          </div>`;
-        }).join('');
+              ${arrow}
+            </div>`;
+          }).join('');
 
-        evoHTML = `
-          <div style="margin-bottom:14px">
-            <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">שרשרת התפתחויות</div>
-            <div style="display:flex;justify-content:center;align-items:center;direction:ltr;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px">
-              ${stageEls}
-            </div>
-          </div>`;
-      }
-    } catch(e) {
-      evoHTML = '';
-    }
+          evoHTML = `
+            <div style="margin-bottom:14px">
+              <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">שרשרת התפתחויות</div>
+              <div style="display:flex;justify-content:center;align-items:center;direction:ltr;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px">
+                ${stageEls}
+              </div>
+            </div>`;
+        }
+      } catch(e) { /* evo chain failed silently */ }
+    } catch(e) { /* species fetch failed silently */ }
 
     const types = apiData.types.map(t =>
       `<span class="type-badge ${TYPE_COLORS[t.type.name]||''}">${t.type.name}</span>`).join(' ');
@@ -3972,8 +4182,8 @@ function openStats() {
       <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">${topTeam || 'ריקה'}</div>
     </div>
 
-    <div class="stats-section">
-      <div class="stats-section-title">קרבות</div>
+    <div style="margin-bottom:14px">
+      <div style="margin:0 0 4px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--panel-border);padding-bottom:4px;text-transform:uppercase;letter-spacing:1px">קרבות</div>
       <div class="stats-grid">
         <div class="stats-card"><div class="stats-card-value">${s.battlesWon || 0}</div><div class="stats-card-label">ניצחונות</div></div>
         <div class="stats-card"><div class="stats-card-value">${s.battlesLost || 0}</div><div class="stats-card-label">הפסדים</div></div>
@@ -4082,6 +4292,376 @@ function showLbTeam(uid) {
 
 // Override handleGymEnemyFainted to also handle elite
 const _origHandleGymEnemyFainted = handleGymEnemyFainted;
+
+// ===== EVO STONE =====
+const MOONSTONE_SVG_SMALL = `<svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="12" cy="13" rx="9" ry="10" fill="#c084fc"/>
+  <ellipse cx="12" cy="13" rx="7" ry="8" fill="#a855f7"/>
+  <ellipse cx="9" cy="9" rx="3" ry="4" fill="#e9d5ff" opacity="0.5"/>
+  <circle cx="15" cy="17" r="1.5" fill="#7c3aed" opacity="0.6"/>
+  <circle cx="8" cy="15" r="1" fill="#7c3aed" opacity="0.5"/>
+  <ellipse cx="12" cy="4" rx="4" ry="3" fill="#ddd6fe"/>
+  <ellipse cx="12" cy="4" rx="2.5" ry="1.8" fill="#f3e8ff"/>
+</svg>`;
+
+const MOONSTONE_SVG_LARGE = `<svg viewBox="0 0 60 60" width="90" height="90" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="30" cy="34" rx="22" ry="24" fill="#c084fc"/>
+  <ellipse cx="30" cy="34" rx="17" ry="19" fill="#a855f7"/>
+  <ellipse cx="22" cy="24" rx="8" ry="10" fill="#e9d5ff" opacity="0.5"/>
+  <circle cx="38" cy="42" r="4" fill="#7c3aed" opacity="0.6"/>
+  <circle cx="20" cy="38" r="2.5" fill="#7c3aed" opacity="0.5"/>
+  <ellipse cx="30" cy="10" rx="10" ry="8" fill="#ddd6fe"/>
+  <ellipse cx="30" cy="10" rx="6.5" ry="5" fill="#f3e8ff"/>
+  <ellipse cx="27" cy="8" rx="2" ry="2.5" fill="#ffffff" opacity="0.7"/>
+</svg>`;
+
+// Pokemon that evolve via stone — id: {id, name} of evolution
+// null = handled as special multi-choice (Eevee)
+const STONE_EVO_MAP = {
+  // Thunder Stone
+  25:  {id:26,  name:'raichu'},        // Pikachu
+  // Fire Stone
+  37:  {id:38,  name:'ninetales'},     // Vulpix
+  58:  {id:59,  name:'arcanine'},      // Growlithe
+  // Water Stone
+  90:  {id:91,  name:'cloyster'},      // Shellder
+  120: {id:121, name:'starmie'},       // Staryu
+  // Leaf Stone
+  44:  {id:45,  name:'vileplume'},     // Gloom
+  70:  {id:71,  name:'victreebel'},    // Weepinbell
+  102: {id:103, name:'exeggutor'},     // Exeggcute
+  // Moon Stone
+  35:  {id:36,  name:'clefable'},      // Clefairy
+  39:  {id:40,  name:'wigglytuff'},    // Jigglypuff
+  // Sun Stone
+  191: {id:192, name:'sunflora'},      // Sunkern
+  315: {id:407, name:'roserade'},      // Roselia
+  // Shiny Stone
+  176: {id:468, name:'togekiss'},      // Togetic
+  // Dusk Stone
+  200: {id:429, name:'mismagius'},     // Misdreavus
+  198: {id:430, name:'honchkrow'},     // Murkrow
+  // Dawn Stone
+  281: {id:282, name:'gardevoir'},     // Kirlia
+  // Ice Stone
+  220: {id:221, name:'piloswine'},     // Swinub (actually level, skip)
+  // Eevee — special multi-choice
+  133: null
+};
+
+// Eevee evolutions (stone selection)
+const EEVEE_EVOS = [
+  {id:134,name:'vaporeon',  label:'💧 Vaporeon'},
+  {id:135,name:'jolteon',   label:'⚡ Jolteon'},
+  {id:136,name:'flareon',   label:'🔥 Flareon'},
+  {id:196,name:'espeon',    label:'🌟 Espeon'},
+  {id:197,name:'umbreon',   label:'🌙 Umbreon'},
+  {id:470,name:'leafeon',   label:'🌿 Leafeon'},
+  {id:471,name:'glaceon',   label:'❄️ Glaceon'},
+  {id:700,name:'sylveon',   label:'🎀 Sylveon'},
+];
+
+function showFoundEvoStonePopup() {
+  const popup = document.createElement('div');
+  popup.className = 'found-pokeball-popup';
+  popup.innerHTML = `
+    <div class="found-pokeball-card" style="border-color:#da70d6;box-shadow:0 0 40px rgba(186,85,211,0.4)">
+      <div style="animation:foundSpin 1s ease-out;display:inline-block">${MOONSTONE_SVG_LARGE}</div>
+      <div class="found-pokeball-title" style="color:#da70d6">מצאת אבן התפתחות!</div>
+      <div class="found-pokeball-sub">לחץ על האבן בסרגל כדי להשתמש</div>
+      <div class="found-pokeball-count" style="color:#da70d6">יש לך ${G.evoStones} אבנים</div>
+    </div>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click', () => popup.remove());
+  setTimeout(() => popup.remove(), 2500);
+}
+
+async function useEvoStone() {
+  if (G.evoStones <= 0) return;
+
+  // Find team members that can evolve via stone
+  const eligible = [];
+  for (const poke of G.team) {
+    if (poke.id === 133) { // Eevee — special multi-choice
+      eligible.push({ poke, multiEvo: EEVEE_EVOS });
+    } else if (STONE_EVO_MAP[poke.id]) {
+      eligible.push({ poke, nextEvo: STONE_EVO_MAP[poke.id] });
+    }
+  }
+
+  if (!eligible.length) {
+    showToast('אין בקבוצה פוקימון שמתפתח עם אבן!');
+    return;
+  }
+
+  // Show selection popup
+  const popup = document.createElement('div');
+  popup.className = 'evo-stone-use-overlay';
+
+  const rows = eligible.map((item, i) => {
+    const p = item.poke;
+    const evoLabel = item.multiEvo
+      ? item.multiEvo.map(e => e.label).join(' / ')
+      : `→ ${item.nextEvo.name}`;
+    return `<button class="evo-stone-poke-btn" onclick="applyEvoStone(${i})">
+      <img src="${p.sprite}" alt="${p.name}">
+      <div class="evo-stone-poke-info">
+        <div class="evo-stone-poke-name">${p.name} <span style="color:var(--text-muted);font-size:11px">L${p.level}</span></div>
+        <div class="evo-stone-poke-evo">${evoLabel}</div>
+      </div>
+    </button>`;
+  }).join('');
+
+  popup.innerHTML = `
+    <div class="evo-stone-use-card">
+      <div style="margin-bottom:10px">${MOONSTONE_SVG_LARGE}</div>
+      <div class="evo-stone-use-title">אבן התפתחות</div>
+      <div class="evo-stone-use-sub">על מי להשתמש? (יש לך ${G.evoStones})</div>
+      <div class="evo-stone-pokemon-list" id="evoStoneList">${rows}</div>
+      <button class="btn-battle btn-run" style="width:100%;margin-top:12px" onclick="this.closest('.evo-stone-use-overlay').remove()">ביטול</button>
+    </div>`;
+
+  // Store eligible for callback
+  popup._eligible = eligible;
+  popup.id = 'evoStonePopup';
+  document.body.appendChild(popup);
+}
+
+async function applyEvoStone(eligibleIdx) {
+  const popup = document.getElementById('evoStonePopup');
+  const eligible = popup?._eligible;
+  if (!eligible) return;
+  const item = eligible[eligibleIdx];
+  if (!item) return;
+
+  popup.remove();
+
+  if (item.multiEvo) {
+    // Show Eevee-style choice
+    showEeveeChoicePopup(item.poke, item.multiEvo);
+  } else {
+    G.evoStones--;
+    updateTopBar();
+    await doEvolve(item.poke, item.nextEvo);
+    saveGame();
+  }
+}
+
+function showEeveeChoicePopup(poke, evoOptions) {
+  const popup = document.createElement('div');
+  popup.className = 'evo-stone-use-overlay';
+  const opts = evoOptions.map(e =>
+    `<button class="evo-stone-poke-btn" onclick="doEeveeEvo('${poke.uid}',${e.id},'${e.name}')">
+      <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${e.id}.png">
+      <div class="evo-stone-poke-info">
+        <div class="evo-stone-poke-name">${e.label}</div>
+      </div>
+    </button>`
+  ).join('');
+  popup.innerHTML = `
+    <div class="evo-stone-use-card">
+      <div class="evo-stone-use-title">Eevee מתפתח ל...</div>
+      <div class="evo-stone-pick-sub">בחר את ההתפתחות</div>
+      <div class="evo-stone-pokemon-list">${opts}</div>
+      <button class="btn-battle btn-run" style="width:100%;margin-top:12px" onclick="this.closest('.evo-stone-use-overlay').remove()">ביטול</button>
+    </div>`;
+  popup.id = 'eeveeChoicePopup';
+  document.body.appendChild(popup);
+}
+
+async function doEeveeEvo(pokeUid, evoId, evoName) {
+  document.getElementById('eeveeChoicePopup')?.remove();
+  const poke = G.team.find(p => String(p.uid) === String(pokeUid));
+  if (!poke) return;
+  G.evoStones--;
+  updateTopBar();
+  await doEvolve(poke, {id: evoId, name: evoName});
+  saveGame();
+}
+
+// ===== FAINT SWITCH =====
+function showSwitchAfterFaint() {
+  if (!battleState) return;
+  const opts = G.team.filter(p => p.currentHP > 0);
+  if (!opts.length) return;
+
+  const list = document.getElementById('switchPokemonList');
+  list.innerHTML = opts.map(p => {
+    const hpPct = Math.max(0, p.currentHP / p.maxHP * 100);
+    const hpColor = hpPct > 50 ? '#4caf50' : hpPct > 25 ? '#ff9800' : '#f44336';
+    const types = (p.types||[]).map(t => `<span class="type-badge ${TYPE_COLORS[t]||''}" style="font-size:10px;padding:1px 6px">${t}</span>`).join('');
+    return `<button class="switch-pokemon-btn" onclick="doFaintSwitch(${G.team.indexOf(p)})">
+      <img src="${p.sprite}" alt="${p.name}">
+      <div class="switch-poke-info">
+        <div class="switch-poke-name">${p.name}</div>
+        <div class="switch-poke-level">רמה ${p.level} | HP ${p.currentHP}/${p.maxHP}</div>
+        <div style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:3px 0">
+          <div style="width:${hpPct}%;height:100%;background:${hpColor};border-radius:2px;transition:width 0.3s"></div>
+        </div>
+        <div>${types}</div>
+      </div>
+    </button>`;
+  }).join('');
+
+  // Change title to indicate faint
+  const title = document.querySelector('#switchOverlay .switch-title');
+  if (title) title.textContent = '⚠️ פוקימון הובס — בחר את הבא!';
+
+  showOverlay('switchOverlay');
+  // Hide cancel button — must choose
+  const cancelBtn = document.querySelector('#switchOverlay .btn-run');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+function doFaintSwitch(teamIdx) {
+  closeOverlay('switchOverlay');
+  // Restore cancel button for future use
+  const cancelBtn = document.querySelector('#switchOverlay .btn-run');
+  if (cancelBtn) cancelBtn.style.display = '';
+  // Restore title
+  const title = document.querySelector('#switchOverlay .switch-title');
+  if (title) title.textContent = 'החלף פוקימון';
+
+  if (!battleState) return;
+  const next = G.team[teamIdx];
+  if (!next || next.currentHP <= 0) return;
+
+  battleState.player = next;
+  document.getElementById('battlePlayerSprite').src = next.backSprite || next.sprite;
+  document.getElementById('battlePlayerName').textContent = next.name;
+  document.getElementById('battlePlayerLevel').textContent = 'רמה ' + next.level;
+  document.getElementById('battlePlayerTypes').innerHTML = (next.types||[]).map(t =>
+    `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
+  updateBattleHP('player', next);
+  updateTeamPanel();
+  setBattleLog(`${next.name} נכנס לקרב! 💪`);
+  setBattleButtonsEnabled(true);
+}
+
+// ===== EGG HATCH =====
+const ALL_STARTERS = [1,4,7,152,155,158,252,255,258,387,390,393,495,498,501,650,653,656,722,725,728,810,813,816,906,909,912];
+
+async function hatchEgg() {
+  // Pick a random starter (not the one the player chose at start)
+  const myStarterId = G.starterChoice?.id;
+  const pool = ALL_STARTERS.filter(id => id !== myStarterId);
+  const starterID = pool[Math.floor(Math.random() * pool.length)];
+  const hatchLevel = Math.max(5, (G.gymProgress || 0) * 10);
+
+  // Show hatch screen
+  const overlay = document.createElement('div');
+  overlay.className = 'egg-hatch-overlay';
+  overlay.id = 'eggHatchOverlay';
+
+  // Generate crack lines SVG
+  const crackLines = Array.from({length:6}, (_, i) => {
+    const angle = (i/6)*360 + Math.random()*30;
+    const len = 20 + Math.random()*25;
+    const x1 = 70 + Math.cos(angle*Math.PI/180)*15;
+    const y1 = 85 + Math.sin(angle*Math.PI/180)*15;
+    const x2 = x1 + Math.cos(angle*Math.PI/180)*len;
+    const y2 = y1 + Math.sin(angle*Math.PI/180)*len;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="white" stroke-width="2.5" opacity="0" class="crack-line-${i}"/>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="egg-hatch-title">🥚 הביצה בוקעת!</div>
+    <div class="egg-hatch-egg" id="hatchEggWrap">
+      <svg viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="eggGrad" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#f0e8ff"/>
+            <stop offset="40%" stop-color="#c084fc"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </radialGradient>
+          <radialGradient id="spotGrad" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#a855f7" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.3"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="70" cy="85" rx="52" ry="62" fill="url(#eggGrad)" stroke="#a855f7" stroke-width="2"/>
+        <ellipse cx="55" cy="65" rx="14" ry="18" fill="white" opacity="0.3"/>
+        <circle cx="85" cy="105" r="7" fill="url(#spotGrad)"/>
+        <circle cx="50" cy="110" r="5" fill="url(#spotGrad)"/>
+        <circle cx="78" cy="50" r="4" fill="url(#spotGrad)"/>
+        ${crackLines}
+      </svg>
+    </div>
+    <div class="egg-hatch-pokemon" id="hatchPokemonReveal">
+      <img id="hatchPokeSprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${starterID}.png" alt="">
+      <div class="egg-hatch-pokemon-name" id="hatchPokeName">...</div>
+      <div class="egg-hatch-pokemon-level" id="hatchPokeLevel">רמה ${hatchLevel}</div>
+    </div>
+    <div class="egg-hatch-particles" id="hatchParticles"></div>
+    <button class="egg-hatch-btn" id="hatchContinueBtn" onclick="finishHatch(${starterID}, ${hatchLevel})">🎉 הוסף לקבוצה!</button>`;
+
+  document.body.appendChild(overlay);
+
+  // Phase 1: egg shaking (3 seconds)
+  const eggWrap = document.getElementById('hatchEggWrap');
+  eggWrap.style.animation = 'eggShake 0.5s ease-in-out infinite';
+  await sleep(1500);
+
+  // Phase 2: cracks appear
+  const svg = eggWrap.querySelector('svg');
+  const cracks = svg.querySelectorAll('[class^="crack-line"]');
+  for (let i = 0; i < cracks.length; i++) {
+    await sleep(200);
+    cracks[i].style.transition = 'opacity 0.3s';
+    cracks[i].style.opacity = '1';
+  }
+  await sleep(800);
+
+  // Phase 3: egg explodes, pokemon appears
+  eggWrap.style.animation = 'eggCrack 0.6s ease-in forwards';
+
+  // Spawn confetti particles
+  const particlesEl = document.getElementById('hatchParticles');
+  const colors = ['#ffd700','#c084fc','#4caf50','#ff6b6b','#4ecdc4','#a29bfe','#fd79a8'];
+  particlesEl.innerHTML = Array.from({length:35}, (_, i) => {
+    const color = colors[i % colors.length];
+    const left = 10 + Math.random()*80;
+    const dur = 1.5 + Math.random()*1.5;
+    const delay = Math.random()*0.5;
+    return `<div class="confetti-piece" style="left:${left}%;background:${color};--dur:${dur}s;--delay:${delay}s;${Math.random()>0.5?'border-radius:50%':''}"></div>`;
+  }).join('');
+
+  await sleep(600);
+
+  // Reveal pokemon
+  const pokeReveal = document.getElementById('hatchPokemonReveal');
+  pokeReveal.style.display = 'flex';
+
+  // Fetch name
+  try {
+    const apiData = await fetchPokemon(starterID);
+    document.getElementById('hatchPokeName').textContent = apiData.name;
+  } catch(e) {}
+
+  await sleep(200);
+  document.getElementById('hatchContinueBtn').style.display = 'block';
+}
+
+async function finishHatch(starterID, hatchLevel) {
+  document.getElementById('eggHatchOverlay')?.remove();
+
+  try {
+    const apiData = await fetchPokemon(starterID);
+    const newPoke = makePokemon(apiData, hatchLevel);
+    G.seen[starterID] = true;
+    G.caught[starterID] = true;
+    addToTeamOrPC(newPoke);
+    showToast(`🥚 ${newPoke.name} בקע מהביצה!`);
+  } catch(e) {
+    showToast('שגיאה בטעינת הפוקימון מהביצה...');
+  }
+
+  // Start new egg immediately
+  G.egg = { battleCount: 0 };
+  updateTopBar();
+  saveGame();
+  updateTeamPanel();
+}
 
 // Initial screen
 showScreen('auth');
