@@ -1310,6 +1310,37 @@ body {
   line-height: 1;
 }
 
+.pdex-shiny-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.pdex-gen-badge {
+  position: absolute;
+  bottom: 22px;
+  right: 3px;
+  font-size: 8px;
+  font-weight: 900;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.pdex-gen-header {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  padding: 10px 0 4px;
+  border-bottom: 1px solid rgba(245,197,24,0.2);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
 /* POKEDEX DETAIL */
 .pdex-detail-container {
   background: var(--panel);
@@ -1610,6 +1641,16 @@ body {
   box-shadow: 0 4px 20px rgba(245,197,24,0.4);
 }
 .gym-win-continue:hover { transform: translateY(-2px); }
+
+/* ===== SHINY FLASH ===== */
+@keyframes shinyFlash {
+  0%   { filter: brightness(1); }
+  20%  { filter: brightness(3) saturate(0); }
+  40%  { filter: brightness(1) hue-rotate(120deg) saturate(2); }
+  60%  { filter: brightness(3) saturate(0); }
+  80%  { filter: brightness(1) hue-rotate(240deg) saturate(2); }
+  100% { filter: brightness(1); }
+}
 
 /* ===== EGG COUNTER ===== */
 .egg-counter {
@@ -2808,7 +2849,14 @@ async function clickZone(idx) {
   try {
     const apiData = await fetchPokemon(poke.id);
     const level = randomEncounterLevel();
+    const isShiny = Math.random() < 1/100;
     const enemy = makePokemon(apiData, level);
+    if (isShiny) {
+      enemy.shiny = true;
+      // Use shiny sprite from API if available
+      const shinySprite = apiData.sprites.front_shiny;
+      if (shinySprite) enemy.sprite = shinySprite;
+    }
     startWildBattle(enemy);
   } catch(e) {
     showToast('שגיאה בטעינת פוקימון, נסה שוב');
@@ -2885,13 +2933,21 @@ function startWildBattle(enemy) {
 
   battleState = { enemy, player: active, isGym: false, catchAttempts: 0, gymIndex: -1, gymPokeIndex: 0, enemyTeam: null };
   catchAttempts = 0;
-  // Mark as seen
   G.seen[enemy.id] = true;
   saveGame();
   setupBattleUI(active, enemy);
   showOverlay('battleOverlay');
   document.getElementById('battleActions').classList.remove('hidden');
   document.getElementById('postBattleActions').classList.add('hidden');
+
+  if (enemy.shiny) {
+    setTimeout(() => {
+      const sprite = document.getElementById('battleEnemySprite');
+      sprite.style.animation = 'shinyFlash 0.8s ease-in-out';
+      setTimeout(() => { sprite.style.animation = ''; }, 800);
+      showToast(`✨ פוקימון שיינִי! ${enemy.name} נדיר במיוחד!`);
+    }, 400);
+  }
 }
 
 function setupBattleUI(player, enemy) {
@@ -2973,11 +3029,13 @@ function typeEffectivenessText(mult) {
 function calcDamage(attacker, defender, type) {
   const atk = type === 'physical' ? attacker.attack : attacker.spAttack;
   const def = type === 'physical' ? defender.defense : defender.spDefense;
-  const power = type === 'physical' ? 40 : 50;
+  const basePower = type === 'physical' ? 40 : 50;
   const level = attacker.level || 1;
+  // Compound interest power scaling: 2% per level
+  const power = Math.floor(basePower * Math.pow(1.02, level));
   // Gen 1 damage formula
   const base = Math.floor((((2 * level / 5 + 2) * power * atk / def) / 50) + 2);
-  const factor = 0.85 + Math.random() * 0.15; // random 85%–100%
+  const factor = 0.85 + Math.random() * 0.15;
   const typeMult = getTypeMultiplier(attacker.types || [], defender.types || []);
   return { dmg: Math.max(1, Math.floor(base * factor * typeMult)), mult: typeMult };
 }
@@ -3227,18 +3285,24 @@ function releaseForXP() {
   if (!battleState) return;
   const enemy = battleState.enemy;
   const chainMult = G.chain >= 10 ? 3 : G.chain >= 5 ? 2 : G.chain >= 3 ? 1.5 : 1;
-  const baseXP = enemy.attack + enemy.spAttack;
-  const xpGain = Math.floor(baseXP * chainMult);
+  const shinyMult = enemy.shiny ? 2 : 1;
+  const totalXP = Math.floor((enemy.attack + enemy.spAttack + enemy.defense + enemy.spDefense) * enemy.level / 5 * chainMult * shinyMult);
+  const alive = G.team.filter(p => p.currentHP > 0);
   const active = getActivePokemon();
 
-  G.team.forEach(p => {
-    if (p.currentHP <= 0) return;
-    const gain = p === active ? Math.floor(xpGain * 0.5) : Math.floor(xpGain * 0.5 / Math.max(1, G.team.filter(x => x.currentHP > 0).length - 1));
-    giveXP(p, gain);
+  // Active gets full XP, rest share full XP among them
+  alive.forEach(p => {
+    if (p === active) {
+      giveXP(p, totalXP);
+    } else {
+      const others = alive.filter(x => x !== active);
+      if (others.length > 0) giveXP(p, Math.max(1, Math.floor(totalXP / others.length)));
+    }
   });
 
+  const shinyStr = enemy.shiny ? ' ✨ x2 שיינִי!' : '';
   const multStr = chainMult > 1 ? ` (x${chainMult} שרשרת!)` : '';
-  setBattleLog(`${enemy.name} שוחרר. קיבלת ${xpGain} XP!${multStr} 🌟`);
+  setBattleLog(`${enemy.name} שוחרר. קיבלת ${totalXP} XP!${multStr}${shinyStr} 🌟`);
   healAllPokemon();
   incrementBattleCounter();
 
@@ -3823,6 +3887,23 @@ function updatePokedexStats() {
   document.getElementById('pdexCaught').textContent = Object.keys(G.caught || {}).length;
 }
 
+// Generation ranges
+const GEN_RANGES = [
+  { gen: 1, name: 'Gen I — Kanto',   start: 1,   end: 151 },
+  { gen: 2, name: 'Gen II — Johto',  start: 152,  end: 251 },
+  { gen: 3, name: 'Gen III — Hoenn', start: 252,  end: 386 },
+  { gen: 4, name: 'Gen IV — Sinnoh', start: 387,  end: 493 },
+  { gen: 5, name: 'Gen V — Unova',   start: 494,  end: 649 },
+  { gen: 6, name: 'Gen VI — Kalos',  start: 650,  end: 721 },
+  { gen: 7, name: 'Gen VII — Alola', start: 722,  end: 809 },
+  { gen: 8, name: 'Gen VIII — Galar',start: 810,  end: 905 },
+  { gen: 9, name: 'Gen IX — Paldea', start: 906,  end: 1025 }
+];
+
+function getGenForId(id) {
+  return GEN_RANGES.find(g => id >= g.start && id <= g.end) || GEN_RANGES[0];
+}
+
 function renderPokedexGrid() {
   const grid = document.getElementById('pokedexGrid');
   const search = pokedexSearchTerm.toLowerCase();
@@ -3832,26 +3913,47 @@ function renderPokedexGrid() {
   if (pokedexFilter === 'seen')   list = list.filter(p => G.seen[p.id]);
   if (pokedexFilter === 'caught') list = list.filter(p => G.caught[p.id]);
 
-  grid.innerHTML = list.map(p => {
-    const isCaught = G.caught[p.id];
-    const isSeen   = G.seen[p.id];
-    const cls = isCaught ? 'caught' : isSeen ? 'seen' : 'unseen';
-    const pokeballSvg = `<svg viewBox="0 0 20 20" width="13" height="13" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle">
-      <circle cx="10" cy="10" r="9" fill="white" stroke="#333" stroke-width="1.5"/>
-      <path d="M1 10 Q1 1 10 1 Q19 1 19 10" fill="#e53935"/>
-      <rect x="1" y="9.2" width="18" height="1.6" fill="#333"/>
-      <circle cx="10" cy="10" r="3" fill="white" stroke="#333" stroke-width="1.5"/>
-      <circle cx="10" cy="10" r="1.5" fill="#ccc"/>
-    </svg>`;
-    const icon = isCaught ? pokeballSvg : '';
-    const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
-    return `<div class="pdex-item ${cls}" onclick="openPokedexDetail(${p.id})">
-      ${icon ? `<div class="pdex-status-icon">${icon}</div>` : ''}
-      <img class="pdex-sprite" src="${spriteUrl}" alt="${p.name}" loading="lazy">
-      <div class="pdex-num">#${String(p.id).padStart(3,'0')}</div>
-      <div class="pdex-name">${isSeen ? p.name : '???'}</div>
-    </div>`;
-  }).join('');
+  const pokeballSvg = `<svg viewBox="0 0 20 20" width="13" height="13" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle">
+    <circle cx="10" cy="10" r="9" fill="white" stroke="#333" stroke-width="1.5"/>
+    <path d="M1 10 Q1 1 10 1 Q19 1 19 10" fill="#e53935"/>
+    <rect x="1" y="9.2" width="18" height="1.6" fill="#333"/>
+    <circle cx="10" cy="10" r="3" fill="white" stroke="#333" stroke-width="1.5"/>
+    <circle cx="10" cy="10" r="1.5" fill="#ccc"/>
+  </svg>`;
+
+  // Group by generation
+  let html = '';
+  if (!search && pokedexFilter === 'all') {
+    // Show gen headers
+    GEN_RANGES.forEach(genInfo => {
+      const genList = list.filter(p => p.id >= genInfo.start && p.id <= genInfo.end);
+      if (!genList.length) return;
+      html += `<div class="pdex-gen-header">✦ ${genInfo.name} ✦</div>`;
+      html += genList.map(p => renderPdexItem(p, pokeballSvg)).join('');
+    });
+  } else {
+    html = list.map(p => renderPdexItem(p, pokeballSvg)).join('');
+  }
+
+  grid.innerHTML = html || '<div style="color:var(--text-muted);text-align:center;padding:40px;grid-column:1/-1">לא נמצאו פוקימונים</div>';
+}
+
+function renderPdexItem(p, pokeballSvg) {
+  const isCaught = G.caught[p.id];
+  const isSeen   = G.seen[p.id];
+  const isShiny  = isCaught && [...G.team, ...G.pc].some(pk => pk.id === p.id && pk.shiny);
+  const cls = isCaught ? 'caught' : isSeen ? 'seen' : 'unseen';
+  const genInfo = getGenForId(p.id);
+  const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`;
+  const shinyBadge = isShiny ? `<div class="pdex-shiny-badge">✨</div>` : '';
+  const caughtBadge = isCaught ? `<div class="pdex-status-icon">${pokeballSvg}</div>` : '';
+  const genBadge = `<div class="pdex-gen-badge">G${genInfo.gen}</div>`;
+  return `<div class="pdex-item ${cls}" onclick="openPokedexDetail(${p.id})">
+    ${caughtBadge}${shinyBadge}${genBadge}
+    <img class="pdex-sprite" src="${spriteUrl}" alt="${p.name}" loading="lazy">
+    <div class="pdex-num">#${String(p.id).padStart(3,'0')}</div>
+    <div class="pdex-name">${isSeen ? p.name : '???'}</div>
+  </div>`;
 }
 
 function filterPokedex(val) {
