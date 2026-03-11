@@ -2168,12 +2168,13 @@ body {
       <div class="pokeball-icon"></div>
       <span id="pokeballCount">5</span> כדורים
     </div>
+    <div class="egg-counter" id="eggCounter" style="display:none">
+      🥚 <span id="eggBattleCount">0</span>/50
+    </div>
     <div class="evo-stone-counter" id="evoStoneCounter" onclick="useEvoStone()" style="display:none">
       <span id="evoStoneCount">0</span>
     </div>
-    <div class="egg-counter" id="eggCounter" style="display:none">
-      🥚 <span id="eggBattleCount">0</span>/100
-    </div>
+    <div style="flex:1"></div>
     <button class="btn-gym" onclick="openGymScreen()" id="btnGym">🏟️ ג'ים <span id="gymNumber">1</span></button>
     <button class="btn-elite-four" onclick="openEliteFour()" id="btnEliteFour" style="display:none">👑 Elite Four</button>
   </div>
@@ -2595,7 +2596,7 @@ function updateTopBar() {
   const eggCounter = document.getElementById('eggCounter');
   if (G.egg) {
     eggCounter.style.display = 'flex';
-    document.getElementById('eggBattleCount').textContent = G.egg.seenCount || 0;
+    document.getElementById('eggBattleCount').textContent = Math.min(G.egg.seenCount || 0, 50);
   } else {
     eggCounter.style.display = 'none';
   }
@@ -3380,15 +3381,15 @@ function releaseForXP() {
   const totalXP = Math.floor((enemy.attack + enemy.spAttack + enemy.defense + enemy.spDefense) * enemy.level / 5 * chainMult * shinyMult);
   const alive = G.team.filter(p => p.currentHP > 0);
   const active = getActivePokemon();
-  const shareXP = Math.floor(totalXP * 0.75);
+  const half = Math.max(1, Math.floor(totalXP / 2));
 
-  // Active gets 0.75×, rest share 0.75× among them
+  // Active gets half, rest share the other half
   alive.forEach(p => {
     if (p === active) {
-      giveXP(p, shareXP);
+      giveXP(p, half);
     } else {
       const others = alive.filter(x => x !== active);
-      if (others.length > 0) giveXP(p, Math.max(1, Math.floor(shareXP / others.length)));
+      if (others.length > 0) giveXP(p, Math.max(1, Math.floor(half / others.length)));
     }
   });
 
@@ -3412,17 +3413,15 @@ function healAllPokemon() {
 }
 
 function markSeen(id) {
-  if (!G.seen[id]) {
-    G.seen[id] = true;
-    if (G.egg) {
-      G.egg.seenCount = (G.egg.seenCount || 0) + 1;
-      updateTopBar();
-      if (G.egg.seenCount >= 50) {
-        G.egg.seenCount = 50;
-        saveGame();
-        setTimeout(() => hatchEgg(), 400);
-        return;
-      }
+  if (!G.seen[id]) G.seen[id] = true;
+  // Egg counter: increment on every wild encounter
+  if (G.egg && !G.egg._hatching) {
+    G.egg.seenCount = (G.egg.seenCount || 0) + 1;
+    updateTopBar();
+    if (G.egg.seenCount >= 50) {
+      G.egg._hatching = true; // guard against double-call
+      saveGame();
+      setTimeout(() => hatchEgg(), 400);
     }
   }
 }
@@ -3640,6 +3639,12 @@ async function checkEvolutions() {
 
 async function tryEvolve(poke) {
   try {
+    // Check trade evolution first (level 40)
+    const tradeEvo = TRADE_EVOS[poke.id];
+    if (tradeEvo && poke.level >= 40) {
+      await doEvolve(poke, tradeEvo);
+      return;
+    }
     const chainData = await fetchEvolutionChain(poke.id);
     const evo = findNextEvolution(chainData.chain, poke.id, poke.level);
     if (evo) {
@@ -4545,7 +4550,27 @@ const MOONSTONE_SVG_LARGE = `<svg viewBox="0 0 60 60" width="90" height="90" xml
   <ellipse cx="27" cy="8" rx="2" ry="2.5" fill="#ffffff" opacity="0.7"/>
 </svg>`;
 
-// Pokemon that evolve via stone — id: {id, name} of evolution
+// Pokemon that evolve via trade — forced to evolve at level 40 instead
+// Pokemon that evolve via trade — evolve at level 40 instead
+const TRADE_EVOS = {
+  61:  {id:186, name:'politoed'},
+  64:  {id:65,  name:'alakazam'},
+  67:  {id:68,  name:'machamp'},
+  75:  {id:76,  name:'golem'},
+  79:  {id:199, name:'slowking'},
+  93:  {id:94,  name:'gengar'},
+  112: {id:464, name:'rhyperior'},
+  117: {id:230, name:'kingdra'},
+  123: {id:212, name:'scizor'},
+  125: {id:466, name:'electivire'},
+  126: {id:467, name:'magmortar'},
+  137: {id:233, name:'porygon2'},
+  185: {id:208, name:'steelix'},
+  233: {id:474, name:'porygon-z'},
+  349: {id:350, name:'milotic'},
+  356: {id:477, name:'dusknoir'},
+  366: {id:367, name:'huntail'},
+};
 // null = handled as special multi-choice (Eevee)
 const STONE_EVO_MAP = {
   // Thunder Stone
