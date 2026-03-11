@@ -1642,6 +1642,81 @@ body {
 }
 .gym-win-continue:hover { transform: translateY(-2px); }
 
+/* ===== RESET BUTTON ===== */
+.btn-reset-game {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 3px 7px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 6px;
+}
+.btn-reset-game:hover {
+  background: rgba(239,68,68,0.3);
+  border-color: #f87171;
+}
+
+/* ===== RESET POPUP ===== */
+.reset-popup {
+  background: var(--panel);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(239,68,68,0.2);
+}
+.reset-popup-icon { font-size: 44px; margin-bottom: 10px; }
+.reset-popup-title {
+  font-size: 18px; font-weight: 900; color: #f87171;
+  margin-bottom: 10px;
+}
+.reset-popup-desc {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6; margin-bottom: 18px;
+}
+.reset-confirm-input {
+  width: 100%; padding: 10px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px; color: #fff;
+  font-size: 14px; text-align: center;
+  font-family: 'Heebo', sans-serif;
+  box-sizing: border-box;
+}
+.reset-confirm-input:focus { outline: none; border-color: #f87171; }
+.reset-popup-btns {
+  display: flex; gap: 10px; margin-top: 16px;
+}
+.btn-reset-cancel {
+  flex: 1; padding: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px; color: #fff;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: 'Heebo', sans-serif;
+}
+.btn-reset-confirm {
+  flex: 1; padding: 12px;
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 12px; color: #f87171;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: 'Heebo', sans-serif;
+  transition: all 0.2s;
+}
+.btn-reset-confirm:not(:disabled):hover {
+  background: rgba(239,68,68,0.4);
+  border-color: #f87171;
+}
+.btn-reset-confirm:disabled {
+  opacity: 0.3; cursor: not-allowed;
+}
+
 /* ===== SHINY FLASH ===== */
 @keyframes shinyFlash {
   0%   { filter: brightness(1); }
@@ -2039,6 +2114,7 @@ body {
         <div class="trainer-name-display" id="topTrainerName"></div>
         <div class="gym-badge">🏅 <span id="gymBadgeCount">0</span>/8 תגים</div>
       </div>
+      <button class="btn-reset-game" onclick="showResetConfirm()" title="אפס משחק">🔄</button>
     </div>
     <div class="top-bar-title">PokéMon ForEveR</div>
     <div class="top-bar-actions">
@@ -2046,6 +2122,22 @@ body {
       <button class="btn-small" onclick="openPokedex()">📖 פוקדקס</button>
       <button class="btn-small" onclick="openPC()">💻 PC</button>
       <button class="btn-small" onclick="signOut()">יציאה</button>
+    </div>
+  </div>
+
+  <!-- RESET CONFIRM POPUP -->
+  <div class="overlay-backdrop hidden" id="resetOverlay" onclick="closeOverlay('resetOverlay')">
+    <div class="reset-popup" onclick="event.stopPropagation()">
+      <div class="reset-popup-icon">⚠️</div>
+      <div class="reset-popup-title">איפוס משחק</div>
+      <div class="reset-popup-desc">כל הנתונים יימחקו לצמיתות!<br>פוקימונים, תגים, פוקדקס — הכל.</div>
+      <div class="reset-popup-confirm-wrap">
+        <input type="text" class="reset-confirm-input" id="resetConfirmInput" placeholder="כתוב 'אפס' לאישור" autocomplete="off">
+      </div>
+      <div class="reset-popup-btns">
+        <button class="btn-reset-cancel" onclick="closeOverlay('resetOverlay')">ביטול</button>
+        <button class="btn-reset-confirm" id="btnResetConfirm" onclick="doResetGame()" disabled>🗑️ אפס הכל</button>
+      </div>
     </div>
   </div>
 
@@ -2334,7 +2426,7 @@ let G = {
     pokemonCaught: 0
   },
   evoStones: 0,
-  egg: null,         // null = no egg yet | { battleCount: 0 }
+  egg: null,         // null = no egg | { seenCount: 0 } = active egg
   totalBattles: 0    // all battles ever (for egg counter)
 };
 
@@ -2496,7 +2588,7 @@ function updateTopBar() {
   const eggCounter = document.getElementById('eggCounter');
   if (G.egg) {
     eggCounter.style.display = 'flex';
-    document.getElementById('eggBattleCount').textContent = G.egg.battleCount;
+    document.getElementById('eggBattleCount').textContent = G.egg.seenCount || 0;
   } else {
     eggCounter.style.display = 'none';
   }
@@ -2587,33 +2679,26 @@ function makePokemon(apiData, level) {
 
 const BASE_POKEMON_BY_TYPE = {
   fire: [
-    {id:4,name:'Charmander',rarity:'very_rare'},{id:58,name:'Growlithe',rarity:'common'},
+    {id:58,name:'Growlithe',rarity:'common'},
     {id:77,name:'Ponyta',rarity:'common'},{id:126,name:'Magmar',rarity:'rare'},
-    {id:155,name:'Cyndaquil',rarity:'very_rare'},{id:218,name:'Slugma',rarity:'common'},
-    {id:255,name:'Torchic',rarity:'very_rare'},{id:228,name:'Houndour',rarity:'rare'},
-    // Gen 4-9 fire starters & bases
-    {id:390,name:'Chimchar',rarity:'common'},{id:467,name:'Magmortar',rarity:'very_rare'},
+    {id:218,name:'Slugma',rarity:'common'},{id:228,name:'Houndour',rarity:'rare'},
+    {id:467,name:'Magmortar',rarity:'very_rare'},
     {id:513,name:'Pansear',rarity:'rare'},{id:554,name:'Darumaka',rarity:'rare'},
     {id:607,name:'Litwick',rarity:'rare'},{id:636,name:'Larvesta',rarity:'very_rare'},
-    {id:653,name:'Fennekin',rarity:'common'},{id:725,name:'Litten',rarity:'very_rare'},
-    {id:757,name:'Salandit',rarity:'rare'},{id:813,name:'Scorbunny',rarity:'very_rare'},
+    {id:757,name:'Salandit',rarity:'rare'},
     {id:851,name:'Sizzlipede',rarity:'rare'}
   ],
   water: [
-    {id:7,name:'Squirtle',rarity:'very_rare'},{id:54,name:'Psyduck',rarity:'common'},
+    {id:54,name:'Psyduck',rarity:'common'},
     {id:60,name:'Poliwag',rarity:'common'},{id:72,name:'Tentacool',rarity:'common'},
     {id:79,name:'Slowpoke',rarity:'common'},{id:116,name:'Horsea',rarity:'rare'},
     {id:118,name:'Goldeen',rarity:'common'},{id:120,name:'Staryu',rarity:'rare'},
-    {id:158,name:'Totodile',rarity:'very_rare'},{id:258,name:'Mudkip',rarity:'very_rare'},
     {id:183,name:'Marill',rarity:'common'},{id:270,name:'Lotad',rarity:'rare'},
     {id:283,name:'Surskit',rarity:'rare'},
-    // Gen 4+
-    {id:393,name:'Piplup',rarity:'very_rare'},{id:418,name:'Buizel',rarity:'common'},
-    {id:489,name:'Phione',rarity:'very_rare'},{id:501,name:'Oshawott',rarity:'very_rare'},
+    {id:418,name:'Buizel',rarity:'common'},{id:489,name:'Phione',rarity:'very_rare'},
     {id:515,name:'Panpour',rarity:'rare'},{id:535,name:'Tympole',rarity:'common'},
     {id:550,name:'Basculin',rarity:'rare'},{id:594,name:'Alomomola',rarity:'rare'},
-    {id:656,name:'Froakie',rarity:'very_rare'},{id:692,name:'Clauncher',rarity:'rare'},
-    {id:728,name:'Popplio',rarity:'very_rare'},{id:816,name:'Sobble',rarity:'very_rare'},
+    {id:692,name:'Clauncher',rarity:'rare'},
     {id:846,name:'Arrokuda',rarity:'common'}
   ],
   ice: [
@@ -2702,21 +2787,20 @@ const BASE_POKEMON_BY_TYPE = {
     {id:840,name:'Applin',rarity:'rare'}
   ],
   grass: [
-    {id:1,name:'Bulbasaur',rarity:'very_rare'},{id:43,name:'Oddish',rarity:'common'},
+    {id:43,name:'Oddish',rarity:'common'},
     {id:69,name:'Bellsprout',rarity:'common'},{id:102,name:'Exeggcute',rarity:'rare'},
-    {id:114,name:'Tangela',rarity:'rare'},{id:152,name:'Chikorita',rarity:'very_rare'},
-    {id:252,name:'Treecko',rarity:'very_rare'},{id:273,name:'Seedot',rarity:'common'},
+    {id:114,name:'Tangela',rarity:'rare'},
+    {id:273,name:'Seedot',rarity:'common'},
     {id:285,name:'Shroomish',rarity:'common'},{id:315,name:'Roselia',rarity:'rare'},
-    // Gen 4+
-    {id:387,name:'Turtwig',rarity:'very_rare'},{id:406,name:'Budew',rarity:'common'},
+    {id:406,name:'Budew',rarity:'common'},
     {id:420,name:'Cherubi',rarity:'common'},{id:455,name:'Carnivine',rarity:'rare'},
-    {id:495,name:'Snivy',rarity:'very_rare'},{id:511,name:'Pansage',rarity:'rare'},
+    {id:511,name:'Pansage',rarity:'rare'},
     {id:546,name:'Cottonee',rarity:'common'},{id:548,name:'Petilil',rarity:'common'},
     {id:556,name:'Maractus',rarity:'rare'},{id:590,name:'Foongus',rarity:'common'},
-    {id:650,name:'Chespin',rarity:'very_rare'},{id:671,name:'Florges',rarity:'rare'},
+    {id:671,name:'Florges',rarity:'rare'},
     {id:673,name:'Gogoat',rarity:'rare'},{id:708,name:'Phantump',rarity:'rare'},
-    {id:722,name:'Rowlet',rarity:'very_rare'},{id:753,name:'Fomantis',rarity:'rare'},
-    {id:755,name:'Morelull',rarity:'common'},{id:810,name:'Grookey',rarity:'very_rare'},
+    {id:753,name:'Fomantis',rarity:'rare'},
+    {id:755,name:'Morelull',rarity:'common'},
     {id:829,name:'Gossifleur',rarity:'common'},{id:840,name:'Applin',rarity:'rare'}
   ],
   ground: [
@@ -2913,8 +2997,8 @@ function spawnPokemon(zoneTypes) {
 }
 
 function randomEncounterLevel() {
-  const minLvl = G.gymProgress === 0 ? 1 : GYM_LEVELS[G.gymProgress - 1];
-  const maxLvl = GYM_LEVELS[Math.min(G.gymProgress, 7)];
+  const minLvl = G.gymProgress === 0 ? 1 : GYM_LEVELS[Math.min(G.gymProgress - 1, 7)];
+  const maxLvl = G.badges >= 8 ? 100 : GYM_LEVELS[Math.min(G.gymProgress, 7)];
   return Math.floor(Math.random() * (maxLvl - minLvl + 1)) + minLvl;
 }
 
@@ -2933,7 +3017,7 @@ function startWildBattle(enemy) {
 
   battleState = { enemy, player: active, isGym: false, catchAttempts: 0, gymIndex: -1, gymPokeIndex: 0, enemyTeam: null };
   catchAttempts = 0;
-  G.seen[enemy.id] = true;
+  markSeen(enemy.id);
   saveGame();
   setupBattleUI(active, enemy);
   showOverlay('battleOverlay');
@@ -3252,7 +3336,7 @@ async function tryToCatch() {
     throwDiv.remove();
 
     G.caught[battleState.enemy.id] = true;
-    G.seen[battleState.enemy.id] = true;
+    markSeen(battleState.enemy.id);
     G.stats = G.stats || {};
     G.stats.pokemonCaught = (G.stats.pokemonCaught || 0) + 1;
     addToTeamOrPC(battleState.enemy);
@@ -3289,14 +3373,15 @@ function releaseForXP() {
   const totalXP = Math.floor((enemy.attack + enemy.spAttack + enemy.defense + enemy.spDefense) * enemy.level / 5 * chainMult * shinyMult);
   const alive = G.team.filter(p => p.currentHP > 0);
   const active = getActivePokemon();
+  const shareXP = Math.floor(totalXP * 0.75);
 
-  // Active gets full XP, rest share full XP among them
+  // Active gets 0.75×, rest share 0.75× among them
   alive.forEach(p => {
     if (p === active) {
-      giveXP(p, totalXP);
+      giveXP(p, shareXP);
     } else {
       const others = alive.filter(x => x !== active);
-      if (others.length > 0) giveXP(p, Math.max(1, Math.floor(totalXP / others.length)));
+      if (others.length > 0) giveXP(p, Math.max(1, Math.floor(shareXP / others.length)));
     }
   });
 
@@ -3319,18 +3404,24 @@ function healAllPokemon() {
   G.pc.forEach(p => { p.currentHP = p.maxHP; });
 }
 
-function incrementBattleCounter() {
-  G.totalBattles = (G.totalBattles || 0) + 1;
-  if (G.egg) {
-    G.egg.battleCount++;
-    updateTopBar();
-    if (G.egg.battleCount >= 100) {
-      G.egg.battleCount = 100; // cap display
-      saveGame();
-      setTimeout(() => hatchEgg(), 400);
-      return;
+function markSeen(id) {
+  if (!G.seen[id]) {
+    G.seen[id] = true;
+    if (G.egg) {
+      G.egg.seenCount = (G.egg.seenCount || 0) + 1;
+      updateTopBar();
+      if (G.egg.seenCount >= 50) {
+        G.egg.seenCount = 50;
+        saveGame();
+        setTimeout(() => hatchEgg(), 400);
+        return;
+      }
     }
   }
+}
+
+function incrementBattleCounter() {
+  G.totalBattles = (G.totalBattles || 0) + 1;
   saveGame();
 }
 
@@ -3462,12 +3553,7 @@ async function handleGymEnemyFainted() {
     G.badges++;
     updateTopBar();
     healAllPokemon();
-    // Grant egg on first gym win
-    if (G.badges === 1 && !G.egg) {
-      G.egg = { battleCount: 0 };
-      updateTopBar();
-      showToast('🥚 קיבלת ביצה! לחם 100 קרבות כדי לבקוע אותה!');
-    }
+    // Grant egg after every gym win (1-8)
     const xpGain = 200 * (wonGymIdx + 1);
     G.team.forEach(p => { if (p.currentHP > 0) giveXP(p, xpGain); });
     saveGame();
@@ -3476,7 +3562,13 @@ async function handleGymEnemyFainted() {
     closeAllOverlays();
     battleState = null;
     updateTeamPanel();
-    showGymBadgeScreen(wonGymIdx, () => { incrementBattleCounter(); checkEvolutions(); });
+    showGymBadgeScreen(wonGymIdx, () => {
+      // After badge screen, show egg received screen then start new egg
+      G.egg = { seenCount: 0 };
+      updateTopBar();
+      saveGame();
+      showEggReceivedScreen(() => { checkEvolutions(); });
+    });
   } else {
     const nextEnemy = bs.enemyTeam[bs.gymPokeIndex];
     bs.enemy = nextEnemy;
@@ -4211,15 +4303,44 @@ async function handleEliteEnemyFainted() {
       updateTeamPanel();
       showEliteFourWinScreen();
     } else {
-      healAllPokemon();
-      await sleep(800);
-      closeAllOverlays();
-      battleState = null;
-      updateTeamPanel();
+      // Move directly to next trainer — NO heal, NO return to map
       const next = ELITE_FOUR[eliteState.trainerIdx];
-      showToast(`✅ ${beaten.name} הובס! הבא: ${next.name} ${next.icon}`);
-      buildEliteScreen();
-      showOverlay('eliteOverlay');
+      setBattleLog(`✅ ${beaten.name} הובס! הבא: ${next.name} ${next.icon}...`);
+      await sleep(1500);
+      // Load next trainer's team and continue in same battle screen
+      const gymTeam = [];
+      for (const name of next.pokemon) {
+        try {
+          const apiData = await fetchPokemon(name);
+          const p = makePokemon(apiData, next.level + Math.floor(Math.random() * 4));
+          gymTeam.push(p);
+        } catch(e) {}
+      }
+      if (!gymTeam.length) { showToast('שגיאה בטעינת הקרב'); return; }
+      const active = getActivePokemon();
+      if (!active) {
+        // All fainted — loss
+        setBattleLog('כל הפוקימונים הובסו! 😢 מתרפאים...');
+        healAllPokemon(); saveGame();
+        await sleep(500);
+        closeAllOverlays(); battleState = null; updateTeamPanel();
+        showToast('💊 כל הפוקימונים התרפאו!');
+        return;
+      }
+      battleState = {
+        enemy: gymTeam[0],
+        player: active,
+        isGym: false,
+        isElite: true,
+        eliteTrainerIdx: eliteState.trainerIdx,
+        gymPokeIndex: 0,
+        enemyTeam: gymTeam,
+        gymIndex: eliteState.trainerIdx,
+        catchAttempts: 0
+      };
+      setupBattleUI(active, gymTeam[0]);
+      setBattleLog(`⚔️ ${next.name} ${next.icon} שלח את ${gymTeam[0].name}!`);
+      setBattleButtonsEnabled(true);
     }
   } else {
     const nextEnemy = bs.enemyTeam[bs.gymPokeIndex];
@@ -4744,13 +4865,39 @@ async function hatchEgg() {
   document.getElementById('hatchContinueBtn').style.display = 'block';
 }
 
+function showEggReceivedScreen(onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'egg-hatch-overlay';
+  overlay.id = 'eggReceivedOverlay';
+  overlay.style.background = 'radial-gradient(ellipse at center, #0a1a2e 0%, #000 100%)';
+  overlay.innerHTML = `
+    <div class="egg-hatch-title" style="color:#a78bfa">🥚 קיבלת ביצה!</div>
+    <div style="font-size:80px;margin:20px 0;animation:eggShake 1s ease-in-out infinite">🥚</div>
+    <div style="color:#c4b5fd;font-size:14px;text-align:center;max-width:280px;line-height:1.6;margin-bottom:8px">
+      הביצה תבקע לאחר שתראה<br>
+      <span style="color:#ffd700;font-size:22px;font-weight:900">50</span> פוקימונים שונים!
+    </div>
+    <div style="width:260px;background:rgba(255,255,255,0.1);border-radius:20px;height:16px;margin:12px auto;overflow:hidden">
+      <div style="width:0%;height:100%;background:linear-gradient(90deg,#a78bfa,#ffd700);border-radius:20px"></div>
+    </div>
+    <div style="color:var(--text-muted);font-size:12px;margin-bottom:24px">0 / 50 פוקימונים נראו</div>
+    <button class="egg-hatch-btn" style="display:block" id="eggReceivedBtn">המשך →</button>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('eggReceivedBtn').addEventListener('click', () => {
+    overlay.remove();
+    if (onDone) onDone();
+  });
+}
+
 async function finishHatch(starterID, hatchLevel) {
   document.getElementById('eggHatchOverlay')?.remove();
 
   try {
     const apiData = await fetchPokemon(starterID);
     const newPoke = makePokemon(apiData, hatchLevel);
-    G.seen[starterID] = true;
+    newPoke.fromEgg = true;
+    markSeen(starterID);
     G.caught[starterID] = true;
     addToTeamOrPC(newPoke);
     showToast(`🥚 ${newPoke.name} בקע מהביצה!`);
@@ -4758,11 +4905,36 @@ async function finishHatch(starterID, hatchLevel) {
     showToast('שגיאה בטעינת הפוקימון מהביצה...');
   }
 
-  // Start new egg immediately
-  G.egg = { battleCount: 0 };
+  // Egg is null until next gym win
+  G.egg = null;
   updateTopBar();
   saveGame();
   updateTeamPanel();
+}
+
+function showResetConfirm() {
+  const input = document.getElementById('resetConfirmInput');
+  if (input) input.value = '';
+  const btn = document.getElementById('btnResetConfirm');
+  if (btn) btn.disabled = true;
+  showOverlay('resetOverlay');
+  setTimeout(() => input?.focus(), 200);
+}
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'resetConfirmInput') {
+    const btn = document.getElementById('btnResetConfirm');
+    if (btn) btn.disabled = e.target.value.trim() !== 'אפס';
+  }
+});
+
+async function doResetGame() {
+  if (!G.uid) return;
+  closeOverlay('resetOverlay');
+  try {
+    await db.ref('players/' + G.uid).remove();
+  } catch(e) {}
+  location.reload();
 }
 
 // Initial screen
