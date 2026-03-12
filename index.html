@@ -423,20 +423,23 @@ body {
 .bottom-bar {
   background: var(--panel);
   border-top: 1px solid var(--panel-border);
-  padding: 10px 16px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .pokeball-counter {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pokeball-icon {
@@ -1190,7 +1193,14 @@ body {
   75% { transform: translateX(8px); }
 }
 
+@keyframes shakeEnemy {
+  0%,100% { transform: scaleX(-1) translateX(0); }
+  25% { transform: scaleX(-1) translateX(-8px); }
+  75% { transform: scaleX(-1) translateX(8px); }
+}
+
 .shake { animation: shake 0.3s ease-in-out; }
+.shake-enemy { animation: shakeEnemy 0.3s ease-in-out; }
 /* ===== POKEDEX ===== */
 .pokedex-container {
   background: var(--panel);
@@ -1744,14 +1754,16 @@ body {
 .egg-counter {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 20px;
-  padding: 6px 12px;
+  padding: 5px 8px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===== EGG HATCH OVERLAY ===== */
@@ -1837,15 +1849,17 @@ body {
 .evo-stone-counter {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: linear-gradient(135deg, rgba(138,43,226,0.3), rgba(75,0,130,0.4));
   border: 1px solid rgba(186,85,211,0.5);
   border-radius: 20px;
-  padding: 6px 14px;
+  padding: 5px 8px;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .evo-stone-counter:hover { border-color: #da70d6; box-shadow: 0 0 12px rgba(186,85,211,0.4); }
 .evo-stone-icon {
@@ -2284,7 +2298,7 @@ body {
 </div>
 
 <!-- POKEDEX DETAIL OVERLAY -->
-<div class="overlay" id="pokedexDetailOverlay">
+<div class="overlay" id="pokedexDetailOverlay" style="z-index:9996">
   <div class="pdex-detail-container" id="pdexDetailContent"></div>
 </div>
 
@@ -2369,7 +2383,7 @@ const TRAINERS = [
   { id: 'ash',   name: 'אש',   sprite: 'https://play.pokemonshowdown.com/sprites/trainers/ash.png' },
   { id: 'brock', name: 'ברוק', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/brock.png' },
   { id: 'misty', name: 'מיסטי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/misty.png' },
-  { id: 'gary',  name: 'גארי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/green.png' }
+  { id: 'gary',  name: 'גארי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/rival.png' }
 ];
 
 const STARTERS = [
@@ -4085,8 +4099,9 @@ function showGymBadgeScreen(gymIdx, onDone) {
 
 function shakeSprite(id) {
   const el = document.getElementById(id);
-  el.classList.add('shake');
-  setTimeout(() => el.classList.remove('shake'), 400);
+  const cls = id === 'battleEnemySprite' ? 'shake-enemy' : 'shake';
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 400);
 }
 
 // ===== POKEDEX =====
