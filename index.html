@@ -306,6 +306,12 @@ body {
   display: block;
   border-radius: 12px;
   box-shadow: var(--shadow);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.map-bg.transitioning {
+  opacity: 0;
+  transform: scale(1.04);
 }
 
 .zone-grid {
@@ -2363,7 +2369,7 @@ const TRAINERS = [
   { id: 'ash',   name: 'אש',   sprite: 'https://play.pokemonshowdown.com/sprites/trainers/ash.png' },
   { id: 'brock', name: 'ברוק', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/brock.png' },
   { id: 'misty', name: 'מיסטי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/misty.png' },
-  { id: 'gary',  name: 'גארי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/gary.png' }
+  { id: 'gary',  name: 'גארי', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/green.png' }
 ];
 
 const STARTERS = [
@@ -2378,30 +2384,90 @@ const STARTERS = [
   { id: 258, name: 'Mudkip',     type: 'Water',        gen: 3 }
 ];
 
-const ZONES = [
-  { row: 0, col: 2, name: 'אזור אש',      types: ['fire'],                       emoji: '🔥' },
-  { row: 0, col: 1, name: 'מגדל',          types: ['dark','psychic','ghost','dragon'], emoji: '🗼' },
-  { row: 0, col: 0, name: 'ים',            types: ['water','ice'],                emoji: '🌊' },
-  { row: 1, col: 2, name: 'יער',           types: ['bug','grass'],                emoji: '🌿' },
-  { row: 1, col: 1, name: 'מדבר',         types: ['ground','normal','flying'],   emoji: '🏜️' },
-  { row: 1, col: 0, name: 'ים',            types: ['water','ice'],                emoji: '🌊' },
-  { row: 2, col: 2, name: 'מערה',         types: ['poison','rock','fighting','steel'], emoji: '🪨' },
-  { row: 2, col: 1, name: 'שדה חשמלי',   types: ['electric'],                   emoji: '⚡' },
-  { row: 2, col: 0, name: 'ים',            types: ['water','ice'],                emoji: '🌊' }
+// Zones per map background (3 maps, 9 zones each — row/col in 3×3 grid)
+// Grid: row0=top, col0=right, col2=left (RTL layout)
+const ZONES_BY_MAP = [
+  // Map 1: badges 0-2 (original map)
+  [
+    { name: 'אזור אש',     types: ['fire'],                            emoji: '🔥' },
+    { name: 'מגדל',        types: ['dark','psychic','ghost','dragon'],  emoji: '🗼' },
+    { name: 'ים',          types: ['water','ice'],                     emoji: '🌊' },
+    { name: 'יער',         types: ['bug','grass'],                     emoji: '🌿' },
+    { name: 'מדבר',        types: ['ground','normal','flying'],        emoji: '🏜️' },
+    { name: 'ים',          types: ['water','ice'],                     emoji: '🌊' },
+    { name: 'מערה',        types: ['poison','rock','fighting','steel'], emoji: '🪨' },
+    { name: 'שדה חשמלי',  types: ['electric','steel'],               emoji: '⚡' },
+    { name: 'ים',          types: ['water','ice'],                     emoji: '🌊' },
+  ],
+  // Map 2: badges 3-5 (CLi9FOo — volcano top-right, forest top-left, castle center, electric/industrial bottom-center, cave bottom-right, ice bottom-left)
+  [
+    { name: 'הר אש',       types: ['fire','dragon'],                   emoji: '🌋' },
+    { name: 'מגדל',        types: ['dark','psychic','ghost','dragon'],  emoji: '🗼' },
+    { name: 'יער',         types: ['bug','grass'],                     emoji: '🌿' },
+    { name: 'מערה',        types: ['poison','rock','fighting','steel'], emoji: '🪨' },
+    { name: 'מדבר',        types: ['ground','normal','flying'],        emoji: '🏜️' },
+    { name: 'שדה חשמלי',  types: ['electric','steel'],               emoji: '⚡' },
+    { name: 'ים',          types: ['water','ice'],                     emoji: '🌊' },
+    { name: 'חוף',         types: ['water','ground'],                  emoji: '🏖️' },
+    { name: 'קרח',         types: ['water','ice'],                     emoji: '🧊' },
+  ],
+  // Map 3: badges 6+ (SlDt6TL — volcano top-left, castle top-right, forest right, nuclear/ice bottom-left, beach bottom-right)
+  [
+    { name: 'הר אש',       types: ['fire','dragon'],                   emoji: '🌋' },
+    { name: 'מגדל',        types: ['dark','psychic','ghost','dragon'],  emoji: '🗼' },
+    { name: 'יער',         types: ['bug','grass'],                     emoji: '🌿' },
+    { name: 'קרח',         types: ['water','ice'],                     emoji: '🧊' },
+    { name: 'ים',          types: ['water','ice'],                     emoji: '🌊' },
+    { name: 'שדה חשמלי',  types: ['electric','steel'],               emoji: '⚡' },
+    { name: 'מערה',        types: ['ground','fighting'],               emoji: '🪨' },
+    { name: 'חוף',         types: ['ground','normal'],                 emoji: '🏖️' },
+    { name: 'ים טרופי',    types: ['water','ice'],                     emoji: '🌊' },
+  ],
 ];
 
+function getActiveZones() {
+  const mapIdx = G.badges >= 6 ? 2 : G.badges >= 3 ? 1 : 0;
+  return ZONES_BY_MAP[mapIdx];
+}
+
 const GYM_LEADERS = [
-  { name: 'ברוק',     type: 'rock',     badge: '🪨', pokemon: ['geodude','onix','graveler','rhyhorn','larvitar','nosepass'] },
-  { name: 'מיסטי',   type: 'water',    badge: '💧', pokemon: ['staryu','starmie','psyduck','golduck','marill','wooper'] },
-  { name: 'לט',       type: 'electric', badge: '⚡', pokemon: ['pikachu','raichu','magneton','electrode','flaaffy','lanturn'] },
-  { name: 'אריל',    type: 'grass',    badge: '🌿', pokemon: ['oddish','gloom','tangela','bayleef','roselia','tropius'] },
-  { name: 'קאנה',    type: 'poison',   badge: '☠️', pokemon: ['koffing','weezing','arbok','muk','haunter','swalot'] },
-  { name: 'בלין',    type: 'psychic',  badge: '🔮', pokemon: ['kadabra','alakazam','jynx','espeon','girafarig','xatu'] },
-  { name: 'בלייד',   type: 'fire',     badge: '🔥', pokemon: ['arcanine','rapidash','magmar','flareon','typhlosion','blaziken'] },
-  { name: 'ג\'ובאני', type: 'ground',   badge: '🌍', pokemon: ['nidoking','nidoqueen','rhydon','donphan','flygon','swampert'] }
+  { name: 'ברוק',     types: ['rock','ground'],     badge: '🪨', pokemon: ['geodude','onix','graveler','rhyhorn','larvitar','nosepass'] },
+  { name: 'מיסטי',   types: ['water','ice'],        badge: '💧', pokemon: ['staryu','starmie','psyduck','seel','dewgong','marill'] },
+  { name: 'לט',       types: ['electric','steel'],   badge: '⚡', pokemon: ['pikachu','raichu','magneton','electrode','magnemite','skarmory'] },
+  { name: 'אריל',    types: ['grass','bug'],         badge: '🌿', pokemon: ['oddish','gloom','tangela','bayleef','roselia','heracross'] },
+  { name: 'קאנה',    types: ['poison','dark'],       badge: '☠️', pokemon: ['koffing','weezing','arbok','muk','sneasel','murkrow'] },
+  { name: 'בלין',    types: ['psychic','ghost'],     badge: '🔮', pokemon: ['kadabra','alakazam','jynx','haunter','gengar','misdreavus'] },
+  { name: 'בלייד',   types: ['fire','dragon'],       badge: '🔥', pokemon: ['arcanine','rapidash','magmar','dragonair','charizard','salamence'] },
+  { name: 'ג\'ובאני', types: ['ground','fighting'],   badge: '🌍', pokemon: ['nidoking','nidoqueen','rhydon','donphan','machamp','lucario'] }
 ];
 
 const GYM_LEVELS = [10,20,30,40,50,60,70,80];
+
+const MAP_BACKGROUNDS = [
+  'https://i.imgur.com/vmDGVFQ.png',   // badges 0-2
+  'https://i.imgur.com/CLi9FOo.png',   // badges 3-5
+  'https://i.imgur.com/SlDt6TL.jpeg',  // badges 6+
+];
+
+function getMapBgForBadges(badges) {
+  if (badges >= 6) return MAP_BACKGROUNDS[2];
+  if (badges >= 3) return MAP_BACKGROUNDS[1];
+  return MAP_BACKGROUNDS[0];
+}
+
+async function updateMapBackground() {
+  const mapBg = document.querySelector('.map-bg');
+  if (!mapBg) return;
+  const newSrc = getMapBgForBadges(G.badges);
+  if (mapBg.src.includes(newSrc.split('/').pop())) return;
+  mapBg.classList.add('transitioning');
+  await sleep(650);
+  mapBg.src = newSrc;
+  mapBg.onload = () => {
+    mapBg.classList.remove('transitioning');
+    buildZoneGrid(); // rebuild zones for new map
+  };
+}
 
 const TYPE_COLORS = {
   fire:'type-fire', water:'type-water', grass:'type-grass', electric:'type-electric',
@@ -2582,6 +2648,7 @@ function enterGameScreen() {
   updateTopBar();
   updateTeamPanel();
   showScreen('game');
+  updateMapBackground();
 }
 
 function updateTopBar() {
@@ -2627,14 +2694,8 @@ function updateTopBar() {
 // ===== ZONE GRID =====
 function buildZoneGrid() {
   const grid = document.getElementById('zoneGrid');
-  // RTL: col order reversed visually, but zones defined by data
-  // We lay them out row by row, right to left
-  const ordered = [
-    ZONES[0], ZONES[1], ZONES[2],  // row 0: fire(col2), tower(col1), sea(col0)
-    ZONES[3], ZONES[4], ZONES[5],  // row 1: forest, desert, sea
-    ZONES[6], ZONES[7], ZONES[8]   // row 2: cave, electric, sea
-  ];
-  grid.innerHTML = ordered.map((z, i) => `
+  const zones = getActiveZones();
+  grid.innerHTML = zones.map((z, i) => `
     <div class="zone" onclick="clickZone(${i})" title="${z.name}">
     </div>`).join('');
 }
@@ -2907,18 +2968,12 @@ const BASE_POKEMON_BY_TYPE = {
 };
 
 // ===== ZONE CLICK =====
-const ORDERED_ZONES = [
-  ZONES[0], ZONES[1], ZONES[2],
-  ZONES[3], ZONES[4], ZONES[5],
-  ZONES[6], ZONES[7], ZONES[8]
-];
-
 async function clickZone(idx) {
   if (battleState) return;
-  const zone = ORDERED_ZONES[idx];
+  const zone = getActiveZones()[idx];
 
-  // 3.5% Pokeball drop
-  if (Math.random() < 0.035) {
+  // 5% Pokeball drop
+  if (Math.random() < 0.05) {
     G.pokeballs++;
     updateTopBar();
     saveGame();
@@ -2974,6 +3029,56 @@ const LEGENDARIES_BY_TYPE = {
   poison:   [{id:317,name:'Swalot',rarity:'legendary'}]
 };
 
+// Pokemon class tiers by ID (roughly by base stat totals)
+const POKEMON_CLASS = {
+  // CLASS 1 — weak (base stats ~195-300)
+  1:10, 4:10, 7:10, 10:1, 11:1, 13:1, 14:1, 16:1, 17:1, 19:1, 20:1, 21:1, 23:1, 27:1, 29:1, 32:1,
+  33:1, 35:1, 36:1, 39:1, 40:1, 41:1, 43:1, 46:1, 48:1, 50:1, 52:1, 54:1, 56:1, 60:1, 63:1, 66:1,
+  69:1, 72:1, 74:1, 77:1, 79:1, 81:1, 84:1, 86:1, 88:1, 90:1, 92:1, 96:1, 98:1, 100:1, 102:1,
+  104:1, 108:1, 109:1, 111:1, 114:1, 116:1, 118:1, 120:1, 122:1, 129:1, 133:1, 138:1, 140:1,
+  152:1, 155:1, 158:1, 161:1, 163:1, 165:1, 167:1, 170:1, 172:1, 173:1, 174:1, 175:1, 177:1,
+  179:1, 183:1, 187:1, 191:1, 193:1, 194:1, 198:1, 200:1, 202:1, 204:1, 206:1, 209:1, 211:1,
+  213:1, 214:1, 216:1, 218:1, 220:1, 222:1, 223:1, 225:1, 228:1, 231:1, 234:1, 235:1, 238:1,
+  239:1, 240:1, 241:1, 252:1, 255:1, 258:1, 261:1, 263:1, 265:1, 270:1, 273:1, 276:1, 278:1,
+  280:1, 283:1, 285:1, 287:1, 293:1, 296:1, 298:1, 300:1, 302:1, 303:1, 304:1, 307:1, 309:1,
+  311:1, 312:1, 313:1, 314:1, 316:1, 318:1, 320:1, 322:1, 325:1, 327:1, 328:1, 331:1, 333:1,
+  335:1, 337:1, 338:1, 339:1, 341:1, 343:1, 345:1, 347:1, 349:1, 351:1, 353:1, 355:1, 360:1,
+  361:1, 363:1, 369:1, 371:1, 374:1, 387:1, 390:1, 393:1,
+  // CLASS 2 — medium (base stats ~300-430)
+  2:2, 5:2, 8:2, 15:2, 18:2, 22:2, 24:2, 25:2, 26:2, 28:2, 30:2, 31:2, 34:2, 37:2, 38:2, 42:2,
+  44:2, 45:2, 47:2, 49:2, 51:2, 53:2, 55:2, 57:2, 58:2, 61:2, 62:2, 64:2, 67:2, 70:2, 71:2,
+  73:2, 75:2, 76:2, 78:2, 80:2, 82:2, 83:2, 85:2, 87:2, 89:2, 91:2, 93:2, 95:2, 97:2, 99:2,
+  101:2, 103:2, 105:2, 106:2, 107:2, 110:2, 112:2, 113:2, 115:2, 117:2, 119:2, 121:2, 123:2,
+  124:2, 125:2, 126:2, 127:2, 128:2, 131:2, 134:2, 135:2, 136:2, 137:2, 162:2, 164:2, 166:2,
+  168:2, 169:2, 171:2, 176:2, 178:2, 180:2, 181:2, 184:2, 185:2, 186:2, 188:2, 189:2, 190:2,
+  192:2, 195:2, 196:2, 197:2, 199:2, 201:2, 203:2, 205:2, 207:2, 208:2, 210:2, 212:2, 215:2,
+  217:2, 219:2, 221:2, 224:2, 226:2, 227:2, 229:2, 230:2, 232:2, 233:2, 236:2, 237:2, 242:2,
+  253:2, 256:2, 259:2, 262:2, 264:2, 267:2, 269:2, 271:2, 272:2, 274:2, 275:2, 277:2, 279:2,
+  281:2, 282:2, 284:2, 286:2, 288:2, 289:2, 290:2, 292:2, 294:2, 295:2, 297:2, 299:2, 301:2,
+  305:2, 308:2, 310:2, 315:2, 317:2, 319:2, 321:2, 323:2, 326:2, 329:2, 330:2, 332:2, 334:2,
+  336:2, 340:2, 342:2, 344:2, 346:2, 348:2, 350:2, 352:2, 354:2, 356:2, 357:2, 358:2, 359:2,
+  362:2, 364:2, 365:2, 368:2, 370:2, 372:2, 373:2, 375:2, 376:2,
+  // CLASS 3 — strong (base stats ~430-540)
+  3:3, 6:3, 9:3, 65:3, 68:3, 76:3, 94:3, 130:3, 142:3, 143:3, 149:3, 154:3, 157:3, 160:3,
+  182:3, 196:3, 197:3, 208:3, 212:3, 214:3, 230:3, 248:3, 254:3, 257:3, 260:3, 292:3, 306:3,
+  310:3, 373:3, 376:3, 380:3, 381:3, 382:3, 383:3, 384:3,
+  // CLASS 4 — elite (base stats 540+, pseudo-legendaries)
+  144:4, 145:4, 146:4, 147:4, 148:4, 150:4, 151:4, 243:4, 244:4, 245:4, 246:4, 247:4, 248:4,
+  249:4, 250:4, 251:4, 377:4, 378:4, 379:4, 380:4, 381:4, 382:4, 383:4, 384:4, 385:4, 386:4,
+};
+
+function getPokemonClass(id) {
+  return POKEMON_CLASS[id] || 1; // default class 1
+}
+
+function getClassWeights() {
+  const b = G.badges;
+  if (b >= 6) return [25, 25, 25, 25];
+  if (b >= 4) return [30, 30, 40, 0];
+  if (b >= 2) return [60, 40, 0, 0];
+  return [100, 0, 0, 0];
+}
+
 function spawnPokemon(zoneTypes) {
   let pool = [];
   zoneTypes.forEach(t => {
@@ -2982,26 +3087,26 @@ function spawnPokemon(zoneTypes) {
   });
   if (!pool.length) return null;
 
-  // Weighted random: 65/25/8/2
-  const rand = Math.random() * 100;
-  let targetRarity;
-  if (rand < 2) {
-    // legendary — pick from zone legendaries
+  // 2% legendary check
+  if (Math.random() * 100 < 2) {
     const legends = [];
     zoneTypes.forEach(t => { (LEGENDARIES_BY_TYPE[t]||[]).forEach(l => { if (!legends.find(x=>x.id===l.id)) legends.push(l); }); });
     if (legends.length) return legends[Math.floor(Math.random() * legends.length)];
-    targetRarity = 'very_rare';
-  } else if (rand < 10) {
-    targetRarity = 'very_rare';
-  } else if (rand < 35) {
-    targetRarity = 'rare';
-  } else {
-    targetRarity = 'common';
   }
 
-  const filtered = pool.filter(p => p.rarity === targetRarity);
-  const chosen = filtered.length ? filtered : pool; // fallback
-  return chosen[Math.floor(Math.random() * chosen.length)];
+  // Class-based weighting
+  const weights = getClassWeights(); // [w1, w2, w3, w4]
+  const roll = Math.random() * 100;
+  let targetClass = 1;
+  let cum = 0;
+  for (let i = 0; i < 4; i++) {
+    cum += weights[i];
+    if (roll < cum) { targetClass = i + 1; break; }
+  }
+
+  let classPool = pool.filter(p => getPokemonClass(p.id) === targetClass);
+  if (!classPool.length) classPool = pool; // fallback
+  return classPool[Math.floor(Math.random() * classPool.length)];
 }
 
 function randomEncounterLevel() {
@@ -3050,7 +3155,7 @@ function setupBattleUI(player, enemy) {
     `<span class="type-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
   updateBattleHP('player', player);
 
-  document.getElementById('battleEnemySprite').src = enemy.sprite;
+  const _es = document.getElementById('battleEnemySprite'); _es.src = enemy.sprite; _es.style.transform = 'scaleX(-1)';
   document.getElementById('battleEnemyName').textContent = enemy.name;
   document.getElementById('battleEnemyLevel').textContent = 'רמה ' + enemy.level;
   document.getElementById('battleEnemyTypes').innerHTML = (enemy.types||[]).map(t =>
@@ -3491,12 +3596,12 @@ function openGymScreen() {
   content.innerHTML = `
     <button class="pc-close" onclick="closeOverlay('gymOverlay')">✕</button>
     <div class="gym-title">🏟️ ג'ים מספר ${gymIdx + 1}</div>
-    <div class="gym-subtitle">מנהיג ג'ים: ${leader.name} | סוג: ${leader.type}</div>
+    <div class="gym-subtitle">מנהיג ג'ים: ${leader.name} | סוג: ${leader.types.join(' + ')}</div>
     <div class="gym-leader-info">
       <div class="gym-leader-sprite">⚔️</div>
       <div>
         <div class="gym-leader-name">${leader.name}</div>
-        <div class="gym-leader-type">סוג: ${leader.type} | רמה ${gymLevel}</div>
+        <div class="gym-leader-type">סוג: ${leader.types.join(' + ')} | רמה ${gymLevel}</div>
         <div style="margin-top:6px">${leader.badge} תג ג'ים</div>
       </div>
     </div>
@@ -3516,13 +3621,24 @@ async function startGymBattle() {
   const gymIdx = G.gymProgress;
   const leader = GYM_LEADERS[gymIdx];
   const gymLevel = GYM_LEVELS[gymIdx];
+  // Stat multiplier: gym 1 = ×1.01, gym 2 = ×1.02 ... gym 8 = ×1.08
+  const statMult = 1 + (gymIdx + 1) * 0.01;
 
-  // Build gym team
+  // Build gym team: 3 from each of the 2 types
   const gymTeam = [];
+  const types = leader.types;
   for (const pname of leader.pokemon) {
     try {
       const apiData = await fetchPokemon(pname);
-      gymTeam.push(makePokemon(apiData, gymLevel));
+      const poke = makePokemon(apiData, gymLevel);
+      // Apply stat multiplier
+      poke.attack    = Math.round(poke.attack    * statMult);
+      poke.defense   = Math.round(poke.defense   * statMult);
+      poke.spAttack  = Math.round(poke.spAttack  * statMult);
+      poke.spDefense = Math.round(poke.spDefense * statMult);
+      poke.maxHP     = Math.round(poke.maxHP     * statMult);
+      poke.currentHP = poke.maxHP;
+      gymTeam.push(poke);
     } catch(e) {}
   }
 
@@ -3559,9 +3675,8 @@ async function handleGymEnemyFainted() {
     G.badges++;
     updateTopBar();
     healAllPokemon();
-    // Grant egg after every gym win (1-8)
-    const xpGain = 200 * (wonGymIdx + 1);
-    G.team.forEach(p => { if (p.currentHP > 0) giveXP(p, xpGain); });
+    applyPendingLevelUps();
+    updateMapBackground();
     saveGame();
     setBattleLog(`🏆 ניצחת את הג'ים! קיבלת את התג!`);
     await sleep(800);
@@ -3580,7 +3695,7 @@ async function handleGymEnemyFainted() {
     bs.enemy = nextEnemy;
     setBattleLog(`${GYM_LEADERS[bs.gymIndex].name} שלח את ${nextEnemy.name}!`);
     await sleep(600);
-    document.getElementById('battleEnemySprite').src = nextEnemy.sprite;
+    const _es = document.getElementById('battleEnemySprite'); _es.src = nextEnemy.sprite; _es.style.transform = 'scaleX(-1)';
     document.getElementById('battleEnemyName').textContent = nextEnemy.name;
     document.getElementById('battleEnemyLevel').textContent = 'רמה ' + nextEnemy.level;
     updateBattleHP('enemy', nextEnemy);
@@ -3590,9 +3705,10 @@ async function handleGymEnemyFainted() {
 
 // ===== XP & LEVELING =====
 function giveXP(poke, amount) {
-  poke.xp = (poke.xp || 0) + amount;
   const maxLevel = G.badges >= 8 ? 100 : GYM_LEVELS[Math.min(G.gymProgress, 7)];
-
+  // XP frozen at cap — don't accumulate when at level ceiling
+  if (poke.level >= maxLevel) return;
+  poke.xp = (poke.xp || 0) + amount;
   while (poke.level < maxLevel) {
     const needed = xpForLevel(poke.level + 1);
     if (poke.xp >= needed) {
@@ -3601,6 +3717,23 @@ function giveXP(poke, amount) {
       showLevelUpToast(poke);
     } else break;
   }
+}
+
+// Called after gym win — new cap unlocked, flush accumulated XP into levels
+function applyPendingLevelUps() {
+  const maxLevel = G.badges >= 8 ? 100 : GYM_LEVELS[Math.min(G.gymProgress, 7)];
+  G.team.forEach(poke => {
+    let leveled = false;
+    while (poke.level < maxLevel) {
+      const needed = xpForLevel(poke.level + 1);
+      if ((poke.xp || 0) >= needed) {
+        poke.level++;
+        recalcStats(poke);
+        leveled = true;
+      } else break;
+    }
+    if (leveled) showLevelUpToast(poke);
+  });
 }
 
 function showLevelUpToast(poke) {
@@ -4261,12 +4394,19 @@ async function startEliteFourBattle() {
   const trainer = ELITE_FOUR[trainerIdx];
   closeOverlay('eliteOverlay');
 
-  // Build gym-style team
+  // Build gym-style team with ×1.10 stat boost
   const gymTeam = [];
   for (const name of trainer.pokemon) {
     try {
       const apiData = await fetchPokemon(name);
       const p = makePokemon(apiData, trainer.level + Math.floor(Math.random() * 4));
+      // Elite Four stat boost ×1.10
+      p.attack    = Math.round(p.attack    * 1.10);
+      p.defense   = Math.round(p.defense   * 1.10);
+      p.spAttack  = Math.round(p.spAttack  * 1.10);
+      p.spDefense = Math.round(p.spDefense * 1.10);
+      p.maxHP     = Math.round(p.maxHP     * 1.10);
+      p.currentHP = p.maxHP;
       gymTeam.push(p);
     } catch(e) {}
   }
@@ -4359,7 +4499,7 @@ async function handleEliteEnemyFainted() {
     bs.enemy = nextEnemy;
     setBattleLog(`${ELITE_FOUR[bs.eliteTrainerIdx].name} שלח את ${nextEnemy.name}!`);
     await sleep(500);
-    document.getElementById('battleEnemySprite').src = nextEnemy.sprite;
+    const _es = document.getElementById('battleEnemySprite'); _es.src = nextEnemy.sprite; _es.style.transform = 'scaleX(-1)';
     document.getElementById('battleEnemyName').textContent = nextEnemy.name;
     document.getElementById('battleEnemyLevel').textContent = 'רמה ' + nextEnemy.level;
     updateBattleHP('enemy', nextEnemy);
